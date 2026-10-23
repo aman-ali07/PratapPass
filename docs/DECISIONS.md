@@ -114,3 +114,16 @@ construction).
 confirmations off — the register flow already handles the cloud's no-session
 `needs-email-confirmation` path. Local `[analytics]` is disabled on this host (vector sidecar
 cannot read the Docker logging driver; KI-010) — no feature impact.
+
+### D-014 — Profile self-edit scope = row policy + column GRANTs · **Active** · 2026-10-23
+**Context** The 4-agent post-T-02 audit found the 0001 self-update policy allowed rewriting
+`role`/`department_id` — a one-call admin escalation. PostgreSQL has **no column lists in
+`CREATE POLICY`**, and Supabase default privileges grant EXECUTE explicitly to
+anon/authenticated/service_role (a PUBLIC-only REVOKE is a no-op) — both traps shape the fix.
+**Decision** Scope comes from two layers: table-level RLS policy pins the row (`id = auth.uid()`)
+and column-level GRANTs pin the write surface (UPDATE on `full_name`/`phone` only; anon keeps
+nothing). Helper execution: `get_user_role`/`is_admin` revoked from anon (by name, not just
+PUBLIC). Roll uniqueness is case-insensitive via expression index `lower(roll_number)`.
+**Consequences** Admin provisioning paths keep full write via service_role/definer functions.
+Future column-scoped edits must follow the same policy+grant pattern (documented in
+`DATABASE.md` §2).

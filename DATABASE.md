@@ -23,11 +23,14 @@ workflow-relevant columns.
 
 ### `profiles`
 `id` FK→`auth.users` CASCADE · `role user_role` DEFAULT `student` · `full_name` NOT NULL ·
-`roll_number` (students; NULL for staff — **partial unique index** where not null) · `phone` ·
+`roll_number` (students; NULL for staff — **case-insensitive unique**:
+partial expression index on `lower(roll_number)`, 0002) · `phone` ·
 `department_id` FK→departments · `designation` (staff title) · timestamps.
 *Email lives only in `auth.users` (no drift-prone copy).*
-RLS: self select/update (own name,phone only) · admin all · faculty/hod select same-department
-students (queue context) · security: none (verify function returns minimal view).
+RLS (0001/0002): self select; self **update scoped by column GRANTs to
+`full_name`/`phone`** (Postgres has no column lists in `CREATE POLICY` — row scope is
+the policy, write scope is the grant) · admin all · faculty/hod select same-department
+students (queue context, planned 0003/0004) · security: none (verify function returns minimal view).
 
 ### `departments`
 `name` UNIQUE · `code` UNIQUE (e.g. `CSE`) · timestamps. Read: all authed; write: admin.
@@ -136,11 +139,12 @@ Emergency/expedited: submit function emits only a `hod` step.
 | Migration | Contents | Status |
 |---|---|---|
 | `0001_profiles_auth.sql` | `pgcrypto`; `user_role` enum; `departments`, `profiles` (+ indexes, `touch_updated_at`); `handle_new_user` bootstrap trigger on `auth.users`; role helpers `get_user_role`/`is_admin`; `check_roll_number_available` RPC; RLS on both tables (authenticated select, profile update by self, department writes closed until admin functions) | ✅ applied — T-02 |
-| `0002_schema_applications.sql` | remaining tables/enums/indexes/constraints: `applications`, `approval_steps`, `gate_passes`, `documents`, `approval_actions`, `notifications`, `audit_logs`, `approval_rules` | ⬜ T-03 |
-| `0003_rls_policy_matrix.sql` | RLS enable + policies per §2 for the tables above (append-only enforcement for history tables; workflow UPDATE constraints live in the functions) | ⬜ T-03 |
-| `0004_workflow.sql` | SECURITY DEFINER transition functions (§5) with chain-order enforcement (no bypass) | ⬜ T-04 |
-| `0005_triggers.sql` | notification triggers, remaining `updated_at` touches | ⬜ T-04 |
-| `0006_seed.sql` | **synthetic** demo data only (see §8) | ⬜ T-05 |
+| `0002_profiles_policy_fix.sql` | T-02a audit hotfix: self-update scoped by column GRANTs (`full_name`/`phone`) replacing the column-open UPDATE policy (P0); case-insensitive roll unique (`lower(roll_number)`, partial); role helpers revoked from anon | ✅ applied — T-02a |
+| `0003_schema_applications.sql` | remaining tables/enums/indexes/constraints: `applications`, `approval_steps`, `gate_passes`, `documents`, `approval_actions`, `notifications`, `audit_logs`, `approval_rules` | ⬜ T-03 |
+| `0004_rls_policy_matrix.sql` | RLS enable + policies per §2 for the tables above (append-only enforcement for history tables; workflow UPDATE constraints live in the functions) | ⬜ T-03 |
+| `0005_workflow.sql` | SECURITY DEFINER transition functions (§5) with chain-order enforcement (no bypass) | ⬜ T-04 |
+| `0006_triggers.sql` | notification triggers, remaining `updated_at` touches | ⬜ T-04 |
+| `0007_seed.sql` | **synthetic** demo data only (see §8) | ⬜ T-05 |
 
 Run: `supabase db reset` (local; migrations apply on `start`/`reset`) / applied to the cloud project
 by CLI push with user-provided credentials (KI-002, go-live). Every migration must be reversible in

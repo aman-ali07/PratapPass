@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +10,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { AppFooter } from "@/components/layout/app-footer";
+import { AppHeader } from "@/components/layout/app-header";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { signOutAction } from "./actions";
 
@@ -42,26 +43,23 @@ export default async function StudentDashboard() {
     .eq("id", user.id)
     .returns<ProfileRow[]>();
 
+  if (error) {
+    // Server-side only: PostgREST messages can carry policy/table internals.
+    console.error("student profile fetch failed:", error.message, error.code);
+  }
   const profile = data?.[0];
 
   return (
     <div className="flex min-h-svh flex-col">
-      <header className="bg-primary text-primary-foreground">
-        <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between px-4">
-          <Link href="/" className="inline-flex items-center gap-2 text-sm font-semibold">
-            <span
-              className="bg-brand-gold-gradient inline-block h-2 w-6 rounded-sm"
-              aria-hidden="true"
-            />
-            PratapPass
-          </Link>
+      <AppHeader
+        right={
           <form action={signOutAction}>
             <Button type="submit" variant="secondary" size="sm">
               Sign out
             </Button>
           </form>
-        </div>
-      </header>
+        }
+      />
 
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10">
         <div className="flex items-center gap-2">
@@ -74,9 +72,9 @@ export default async function StudentDashboard() {
             <CardHeader>
               <CardTitle className="text-base text-destructive">Profile unavailable</CardTitle>
               <CardDescription>
-                {error ? error.message : "Account verified, but no profile row was found."} Try
-                signing out and back in; contact the administration if this persists.
+                Try signing out and back in; contact the administration if this persists.
               </CardDescription>
+              <p className="sr-only">Profile lookup failed for email {user.email}.</p>
             </CardHeader>
           </Card>
         ) : (
@@ -121,9 +119,7 @@ export default async function StudentDashboard() {
         </Card>
       </main>
 
-      <footer className="bg-primary py-3 text-center text-xs text-white/70">
-        PratapPass © 2026 — Maharana Pratap Group of Institutions
-      </footer>
+      <AppFooter />
     </div>
   );
 }

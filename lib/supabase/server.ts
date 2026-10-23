@@ -27,7 +27,11 @@ export async function createSupabaseServerClient() {
             cookieStore.set(name, value, options);
           }
         } catch {
-          // Expected from server components — middleware performs the writes.
+          // Server components cannot write cookies (Next throws on the
+          // attempt). In server actions the cookie store IS writable, but
+          // middleware performs the durable refresh on every request — if a
+          // write fails here the worst outcome is a dropped session cookie
+          // (user sees the login page again), never an authz bypass.
         }
       },
     },

@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 
 import { LoginForm } from "@/components/auth/login-form";
+import { AppFooter } from "@/components/layout/app-footer";
+import { AppHeader } from "@/components/layout/app-header";
 import {
   Card,
   CardContent,
@@ -9,23 +10,22 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { sanitizeRedirectPath } from "@/lib/auth/redirect";
 
 export const metadata: Metadata = { title: "Sign in — PratapPass" };
 
-export default function LoginPage() {
+// Next 15: searchParams is a Promise. The value is pre-validated here, but the
+// server action re-validates because it is user-controlled.
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string }>;
+}) {
+  const { next } = await searchParams;
+
   return (
     <div className="flex min-h-svh flex-col bg-secondary/40">
-      <header className="bg-primary text-primary-foreground">
-        <div className="mx-auto flex h-14 w-full max-w-5xl items-center px-4">
-          <Link href="/" className="inline-flex items-center gap-2 text-sm font-semibold">
-            <span
-              className="bg-brand-gold-gradient inline-block h-2 w-6 rounded-sm"
-              aria-hidden="true"
-            />
-            PratapPass
-          </Link>
-        </div>
-      </header>
+      <AppHeader />
 
       <main className="mx-auto grid w-full max-w-md flex-1 place-items-center px-4 py-10">
         <Card className="w-full">
@@ -36,14 +36,12 @@ export default function LoginPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <LoginForm />
+            <LoginForm next={sanitizeRedirectPath(next)} />
           </CardContent>
         </Card>
       </main>
 
-      <footer className="bg-primary py-3 text-center text-xs text-white/70">
-        PratapPass © 2026 — Maharana Pratap Group of Institutions
-      </footer>
+      <AppFooter />
     </div>
   );
 }

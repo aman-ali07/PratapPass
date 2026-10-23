@@ -1,15 +1,17 @@
 import { z } from "zod";
 
 /**
- * Shared auth validation. Roll-number format is a placeholder until the
- * institutional pattern + department prefix map arrive (KI-001); it fixes
- * the important invariants today (trimmed, alphanumeric, 3–20 chars).
+ * Shared auth validation. Roll numbers are canonicalized to uppercase so the
+ * stored value and the case-folded DB index (0002 `lower(roll_number)`) can
+ * never disagree. Format is a placeholder until the institutional pattern +
+ * department prefix map arrive (KI-001).
  */
 export const rollNumberSchema = z
   .string()
   .trim()
-  .regex(/^[A-Za-z0-9]{3,20}$/, {
-    error: "Roll number must be 3–20 letters or digits (instititional format pending).",
+  .toUpperCase()
+  .regex(/^[A-Z0-9]{3,20}$/, {
+    error: "Roll number must be 3–20 letters or digits (institutional format pending).",
   });
 
 export const fullNameSchema = z
@@ -24,15 +26,23 @@ export const passwordSchema = z
   .min(8, { error: "Password must be at least 8 characters." })
   .max(72, { error: "Password must be at most 72 characters." });
 
+// Normalize (trim + lowercase) BEFORE validating — a pasted
+// "Aman.1@MpGi.ac.in " must still validate instead of failing on the space.
+const emailSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .pipe(z.email({ error: "Enter a valid email address." }));
+
 export const signInSchema = z.object({
-  email: z.email({ error: "Enter a valid email address." }).transform((value) => value.trim()),
+  email: emailSchema,
   password: z.string().min(1, { error: "Enter your password." }),
 });
 
 export const signUpSchema = z.object({
   fullName: fullNameSchema,
   rollNumber: rollNumberSchema,
-  email: z.email({ error: "Enter a valid email address." }).transform((value) => value.trim()),
+  email: emailSchema,
   password: passwordSchema,
 });
 

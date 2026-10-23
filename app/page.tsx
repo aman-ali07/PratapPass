@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { AppFooter } from "@/components/layout/app-footer";
+import { AppHeader } from "@/components/layout/app-header";
 import {
   Card,
   CardContent,
@@ -38,24 +38,13 @@ const roles = [
 export default function Home() {
   return (
     <div className="flex min-h-svh flex-col">
-      <header className="bg-primary text-primary-foreground">
-        <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between px-4">
-          <Button
-            variant="secondary"
-            render={<Link href="/" />}
-            className="items-center gap-2 text-sm font-semibold"
-          >
-            <span
-              className="bg-brand-gold-gradient inline-block h-2 w-6 rounded-sm"
-              aria-hidden="true"
-            />
-            PratapPass
-          </Button>
+      <AppHeader
+        right={
           <Badge variant="outline" className="border-white/30 text-white/80">
-            In development — T-01 scaffold
+            In development — T-02 auth live
           </Badge>
-        </div>
-      </header>
+        }
+      />
 
       <main className="flex-1">
         <section className="bg-primary bg-hero-scrim text-primary-foreground">
@@ -90,12 +79,7 @@ export default function Home() {
         </section>
       </main>
 
-      <footer className="bg-primary text-primary-foreground">
-        <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-4 text-xs text-white/70">
-          <span>PratapPass © 2026 — Maharana Pratap Group of Institutions</span>
-          <span>Digital Gate Pass &amp; Medical Approval System</span>
-        </div>
-      </footer>
+      <AppFooter />
     </div>
   );
 }

@@ -9,13 +9,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export function LoginForm() {
+export function LoginForm({ next }: { next?: string | null }) {
   const [state, formAction, pending] = useActionState(signIn, initialAuthState);
 
   const fieldError = (field: "email" | "password") => state.fieldErrors[field];
 
   return (
     <form action={formAction} noValidate className="grid gap-4">
+      {next ? <input type="hidden" name="next" value={next} /> : null}
       {state.status === "error" && state.message && (
         <p
           role="alert"
