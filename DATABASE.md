@@ -1,6 +1,7 @@
 # DATABASE — PratapPass
 
-Status: **migrations 0001–0006 applied** (T-02 auth slice + T-02a hotfix → T-05 seed policy);
+Status: **migrations 0001–0008 applied** (T-02 auth slice + T-02a hotfix → T-05 seed → T-06
+storage/cap);
 demo seed lives OUTSIDE migrations in `supabase/seed.sql` (this document is the normative source).
 
 Conventions: UUID PKs (`gen_random_uuid()`), `created_at`/`updated_at` `timestamptz` not null
@@ -47,7 +48,7 @@ admin select all · **no direct client UPDATE** (status written by functions onl
 
 ### `medical_documents`
 `application_id` FK→applications CASCADE · `storage_path` UNIQUE (opaque: `{application_id}/{uuid}.{ext}`) ·
-`content_type` CHECK IN (`application/pdf`,`image/jpeg`,`image/png`) · `byte_size` CHECK ≤ 10 485 760 ·
+`content_type` CHECK IN (`application/pdf`,`image/jpeg`,`image/png`) · `byte_size` CHECK ≤ 4 194 304 (0008, D-016) ·
 `label` (display text, no filename) · `uploaded_by` FK · `uploaded_at`.
 RLS: student select own · approver select limited to applications inside their decision scope ·
 **access only via server signed-URL action** (audit-gated); no public bucket paths, ever.
@@ -106,10 +107,13 @@ Editable by admin UI only; read only by admins (RLS) — workflow functions read
 
 ## 4. Storage
 
-- Bucket **`medical-documents` — private**: path `{application_id}/{uuid}.{ext}` (no PII in paths).
+- Bucket **`medical-documents` — private** (0007): path `{application_id}/{uuid}.{ext}` (no PII in
+  paths); bucket-level `file_size_limit` = 4 MiB + mime allowlist mirror the app boundary.
 - Progress documents (profile photo) optional, separate private bucket, same rules.
-- Browser upload goes through the validated server action (mime + size re-verified server-side);
-  the anon client never receives a bucket write credential.
+- Browser upload goes through the validated server action (magic bytes are the content-type
+  authority; a declared type that disagrees with the sniffed bytes is rejected; size ≤ 4 MiB);
+  the anon client never receives a bucket write credential (no `storage.objects` client policies —
+  default-deny smoke-proven).
 
 ## 5. SECURITY DEFINER functions (workflow authority)
 
@@ -165,6 +169,8 @@ Emergency/expedited: submit function emits only a `hod` step.
 | `0004_rls_policy_matrix.sql` | RLS enable + policies per §2 for the tables above (append-only enforcement for history tables; workflow UPDATE constraints live in the functions) | ✅ applied — T-03 |
 | `0005_workflow.sql` | SECURITY DEFINER transition functions (§5) with chain-order enforcement (no bypass); `private.app_secrets` schema (D-015 QR secret); client EXECUTE labeled (fn_issue_pass/system-only) | ✅ applied — T-04 |
 | `0006_triggers.sql` | pass-issuance trigger on app-status → `approved`; **absolute append-only guards** (BEFORE UPDATE/DELETE RAISE on approval_actions, gate_verification_logs, audit_logs — binds owner/definer too, grants alone cover only client roles); no remaining `updated_at` touches (0001/0003 cover every timestamped table; history tables are timeless) | ✅ applied — T-04 |
+| `0007_storage_bucket.sql` | private `medical-documents` bucket (4 MiB `file_size_limit`, PDF/JPG/PNG allowlist, idempotent); **no** `storage.objects` client policies — default deny holds, service-role writes only (D-016) | ✅ applied — T-06 |
+| `0008_document_cap_and_submit_id.sql` | document cap 10 MiB → 4 MiB (`byte_size` CHECK, D-016); `fn_submit_application` gains optional server-allocated `p_application_id` so uploads land on the FINAL `{application_id}/{uuid}.{ext}` path with no staging/move (five-param overload dropped; grants re-issued on the six-param identity) | ✅ applied — T-06 |
 | `supabase/seed.sql` | **synthetic** demo data only (§8) — identities incl. GoTrue-required `auth.users` shape (zero-uuid `instance_id`, provider `raw_app_meta_data`, empty token strings) + `auth.identities` rows; fixed UUIDs; every insert idempotent (`on conflict`/`where not exists`) | ✅ T-05 |
 
 Run: `supabase db reset` (local; migrations apply on `start`/`reset`) / applied to the cloud project

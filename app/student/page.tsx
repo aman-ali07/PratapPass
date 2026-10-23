@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -17,7 +17,13 @@ import { signOutAction } from "./actions";
 
 export const metadata: Metadata = { title: "My dashboard — PratapPass" };
 
-export default async function StudentDashboard() {
+export default async function StudentDashboard({
+  searchParams,
+}: {
+  searchParams: Promise<{ submitted?: string }>;
+}) {
+  const submitted = (await searchParams).submitted;
+
   const supabase = await createSupabaseServerClient();
 
   const {
@@ -51,10 +57,17 @@ export default async function StudentDashboard() {
       />
 
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10">
-        <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-semibold">My dashboard</h1>
-          <Badge variant="outline">T-02 in progress</Badge>
-        </div>
+        <h1 className="text-2xl font-semibold">My dashboard</h1>
+
+        {submitted && (
+          <p
+            role="status"
+            className="mt-4 rounded-md border border-primary/30 bg-primary/10 px-3 py-2 text-sm text-primary"
+          >
+            Application received — your approval chain is queued. You will be
+            notified when a reviewer acts on it.
+          </p>
+        )}
 
         {error || !profile ? (
           <Card className="mt-6">
@@ -101,10 +114,17 @@ export default async function StudentDashboard() {
           <CardHeader>
             <CardTitle className="text-base">Gate-pass applications</CardTitle>
             <CardDescription>
-              Arrives with milestone T-06: online application with medical document uploads,
-              review chain, and live status tracking.
+              Submit a new application with any required medical document; the live
+              status timeline arrives with T-07.
             </CardDescription>
           </CardHeader>
+          {profile?.role === "student" && (
+            <CardContent>
+              <Button render={<Link href="/student/apply" />} size="sm">
+                New application
+              </Button>
+            </CardContent>
+          )}
         </Card>
       </main>
 

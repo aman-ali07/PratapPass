@@ -347,7 +347,7 @@ isOneToOne: false
 { Args: { "p_application_id": string,"p_text": string }; Returns: undefined
                            },
 "fn_submit_application":
-{ Args: { "p_departure_at": string,"p_docs"?: Json,"p_expected_return_at": string,"p_explanation": string,"p_reason": Database["public"]['Enums']["gate_reason"] }; Returns: {
+{ Args: { "p_application_id"?: string,"p_departure_at": string,"p_docs"?: Json,"p_expected_return_at": string,"p_explanation": string,"p_reason": Database["public"]['Enums']["gate_reason"] }; Returns: {
               "additional_info": string | null,
 "created_at": string,
 "decided_at": string | null,

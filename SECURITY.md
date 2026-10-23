@@ -34,7 +34,9 @@ SECURITY DEFINER function — even a compromised client cannot pre-approve or sk
 
 - Private bucket `medical-documents`; **no public URL mode**, ever.
 - Upload path: server action validates Zod fields, then verifies `content-type` + magic-byte check
-  + size ≤ 10 MB server-side; storage object name is an opaque UUID (no names/rolls in paths).
+  + size ≤ 4 MB server-side (declared type must match the sniffed bytes); storage object name is an
+  opaque UUID (no names/rolls in paths). The 4 MB cap follows from the server-mediated transport —
+  Vercel functions reject bodies over ~4.5 MB with no override (D-016).
 - Download path: `GET /api/documents/[id]` — session + RLS-equivalent ownership check → audit
   insert (`document.signed_url_issued` with actor+target) → **307 to a ≤5-minute signed URL**.
   The browser never retains a stable document link.

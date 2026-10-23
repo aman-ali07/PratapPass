@@ -1,23 +1,12 @@
 "use server";
 
-import { z } from "zod";
-
 import { redirect } from "next/navigation";
 
 import { type AuthActionState } from "@/lib/auth/form-state";
 import { sanitizeRedirectPath } from "@/lib/auth/redirect";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { fieldErrorsFrom } from "@/lib/validation/field-errors";
 import { type SignInInput, type SignUpInput, signInSchema, signUpSchema } from "@/lib/validation/auth";
-
-function validationErrors(error: z.ZodError): Record<string, string[]> {
-  const fieldErrors: Record<string, string[]> = {};
-  for (const issue of error.issues) {
-    if (issue.path.length === 0) continue;
-    const field = issue.path.join(".");
-    (fieldErrors[field] ??= []).push(issue.message);
-  }
-  return fieldErrors;
-}
 
 /**
  * Known provider messages map to actionable copy; anything else must never
@@ -57,7 +46,7 @@ export async function signUpStudent(
     return {
       status: "error",
       message: "Please fix the highlighted fields.",
-      fieldErrors: validationErrors(parsed.error),
+      fieldErrors: fieldErrorsFrom(parsed.error),
     };
   }
   const input = parsed.data satisfies SignUpInput;
@@ -126,7 +115,7 @@ export async function signIn(
     return {
       status: "error",
       message: "Please fix the highlighted fields.",
-      fieldErrors: validationErrors(parsed.error),
+      fieldErrors: fieldErrorsFrom(parsed.error),
     };
   }
   const input = parsed.data satisfies SignInInput;

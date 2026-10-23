@@ -59,7 +59,7 @@ requests with secure medical document handling.
 - **ST-2** — As a student, I can submit an application with reason, departure date/time, expected return time, and explanation.
   *AC:* forms validated server-side; medical uploads shown/conditioned on the reason or document requirement rule; submission lands in the approver queue and notifies them.
 - **ST-3** — As a student, I can upload prescriptions/reports (PDF, JPG, PNG) only to my own application.
-  *AC:* allowed mime + ≤10 MB per file; files land in a private bucket; direct bucket access is impossible for students; access is via server-minted signed URLs and is audit-logged.
+  *AC:* allowed mime + ≤4 MB per file (server-mediated upload — D-016); files land in a private bucket; direct bucket access is impossible for students; access is via server-minted signed URLs and is audit-logged.
 - **ST-4** — As a student, I can see the live status and full approval timeline of my applications and read approver remarks.
   *AC:* state machine transitions only; no unauthorized status changes.
 - **ST-5** — As a student, I can download/scan my approved pass (QR) and view past applications.

@@ -143,3 +143,25 @@ a 0006 trigger on the application's transition to `approved` (the decide functio
 guards can fall back to code entry. Go-live must provision the production secret (KI-002);
 issuance fails loudly (never silently) without it. Edge semantics (late returns accepted, unknown
 probes unlogged) are specified in `DATABASE.md` §6 addendum.
+
+### D-016 — Medical-document upload: server-mediated, cap 4 MB · **Active** · 2026-10-23
+**Context** Resolves KI-011 before building T-06: a 10 MB document cannot traverse a Server
+Action (Next's own 1 MB default limit / Vercel's hard ~4.5 MB function-body ceiling, which has no
+override — confirmed against current Vercel docs). Direct-to-storage alternatives (presigned
+`createSignedUploadUrl` or a streaming route handler) were weighed against keeping the validated
+server action as the single boundary. The owner explicitly chose: keep the server-mediated
+transport faithful to `SECURITY.md`/`DATABASE.md §4`, and lower the product cap to 4 MB.
+**Decision** The browser submits fields + file in one server-action call and never receives a
+bucket write credential. The action: Zods the fields and the file claim; **sniffs magic bytes and
+rejects on any declared/sniffed mismatch** (renamed-binary defense); generates the application
+UUID server-side and uploads directly to the FINAL `{application_id}/{uuid}.{ext}` path via the
+service-role client (0008 lets `fn_submit_application` accept that id — no staging prefix, no
+post-commit move); calls `fn_submit_application` under the real session; on function failure it
+removes the uploaded object (no orphans). The 4 MiB cap is enforced at three layers: Zod
+(`lib/validation/application.ts`), the bucket `file_size_limit` (0007), and the DB CHECK (0008);
+`next.config.ts` raises Next's action-body limit to 4.5 MB so a legal payload always clears.
+**Consequences** The product accepts a smaller document ceiling as the explicit trade-off for a
+uniform validated boundary. Times arrive as UTC ISO converted in the browser (naive strings would
+be parsed in the server's timezone — client component mirrors `datetime-local` → hidden ISO
+input). The UI shows the file input for reason=medical only; rule-driven requirements for other
+reasons surface the DB function's message at submit (KI-013).

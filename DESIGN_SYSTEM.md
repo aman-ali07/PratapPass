@@ -89,5 +89,5 @@ mapping above is the contract.)
   animation (project brief).
 
 ## 7. Content rules
-Institutional plain English; errors say the next action ("Upload a PDF/JPG/PNG under 10 MB");
+Institutional plain English; errors say the next action ("Upload a PDF/JPG/PNG up to 4 MB");
 empty states state what belongs there and what to do next; skeletons match final layout.

@@ -27,7 +27,7 @@ directly.
 | `signUpStudent` | guest | roll number, email, password | roll format/prefix rule (KI-001); always role `student`; staff cannot self-grant |
 | `signIn` | guest | email, password | session-issued; honors validated `?next=` intra-site path |
 | `signOutAction` | any authenticated | — (none) | clears session cookies; failure surfaced via `/login?signout=failed` |
-| `submitApplication(id?, fields, files?)` | student | reason, departure/return, explanation, docs (PDF/JPG/PNG ≤10 MB) | inserts app + steps per `approval_rules`; private-bucket upload with server-side mime/size re-check; audit + notifications |
+| `submitApplicationAction(prevState, formData)` | student | reason, departure/return (UTC ISO converted client-side), explanation, document file (PDF/JPG/PNG ≤4 MB) | server-mediated upload (D-016): magic bytes are the content-type authority (declared/sniffed mismatch rejected), service-role bucket write to the final `{application_id}/{uuid}.{ext}` path, then `fn_submit_application` under the real session with a server-allocated application id (0008); a failed submit removes the uploaded object; audit + notifications |
 | `provideAdditionalInfo(appId, text)` | student | ≤ 2000 chars | only when `additional_info_required`; back to `under_review`; audit + notify approver |
 | `decideApplication(appId, { approve \| reject \| request_info }, remarks)` | faculty/hod | remarks required on reject/request_info | Postgres `fn_decide_application` enforces chain order & scope; immutable history; notifications |
 | `markNotificationsRead(ids)` | user | owned ids only | RLS + ownership check |
