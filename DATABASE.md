@@ -115,12 +115,17 @@ Editable by admin UI only; read only by admins (RLS) — workflow functions read
 
 | Function | Caller | Enforces |
 |---|---|---|
-| `fn_submit_application(...)` (incl. doc rows) | student | role, window checks, rules lookup → builds steps; audit + notifications |
-| `fn_decide_application(p_app, p_action, p_remarks)` | approver | actor is the *active step's* role/scope; chain order; transitions per §6; appends `approval_actions`; on final approve → `fn_issue_pass`; notifications |
-| `fn_provide_info(p_app, p_text)` | student | only while `additional_info_required`; returns app to `under_review`; audit |
-| `fn_issue_pass(p_app)` | system | one pass per approved application; token generation+hash; expiry from rules |
-| `fn_gate_record(p_token_or_code, p_event)` | security | token hash lookup; validity window; exit/return dedupe; `result` classification; rejections logged & rejected |
-| `fn_mark_notifications_read(p_ids)` | user | owns rows |
+| `fn_submit_application(reason, departure, expected_return, explanation, docs jsonb)` | student | role = student, future departure window, rules lookup (department rule → global), `requires_medical_document` ⇒ ≥1 doc row, chain built (emergency ⇒ single `hod` step); audit + notifications; doc metadata validated |
+| `fn_decide_application(p_app, p_action, p_remarks)` | approver | role = faculty/hod; actor is the *active step's* role in the step's department (or explicit assignee); lowest pending step is the ONLY reachable one; reject/request_info require remarks; transitions per §6; appends `approval_actions`; on final approve sets app `approved` (0006 trigger issues the pass); notifications |
+| `fn_provide_info(p_app, p_text)` | student | only while `additional_info_required`; paused step resumes `pending`; app back to `under_review`; audit + notify resumed approvers |
+| `fn_issue_pass(p_app)` | system (0006 trigger) | not client-executable (`permission denied`); one pass per application (UNIQUE); token = `HMAC-SHA256(qr_token_secret, pass_id)` hex (D-015 — raw never stored, re-derivable by the QR route); `pass_code` `MPGI-<6hex>` with retry; validity = trip window bounded by `pass_validity_hours`; notification + audit |
+| `fn_gate_record(p_token_or_code, p_event)` | security/admin | resolves by raw-token hash OR `MPGI-*` code (normalized); classifies
+`valid/expired/revoked/already_exited/already_returned/invalid_token/staff_rejected`; appends `gate_verification_logs` — **unknown probes return `invalid_token` without a log row** (logs require a pass reference); valid `return` completes the application; returns holder name + validity ONLY (never reason/medical text) |
+| `fn_mark_notifications_read(p_ids uuid[])` | user | ownership-pinned over the same column-grant + RLS guarantee |
+
+Where the secret lives: `private.app_secrets (qr_token_secret)` — a non-API schema
+(`db_extra_search_path` untouched), full revokes on all client roles; `fn_issue_pass` reads it
+in-session. Production value is provisioned at go-live (KI-002 parity checklist).
 
 All notify/audit appends live inside these functions (or triggers) so ordinary roles need no
 direct INSERT on logs/notifications.
@@ -138,6 +143,18 @@ gate 'return' recorded ──> completed
 ```
 Emergency/expedited: submit function emits only a `hod` step.
 
+§6 addendum (edge semantics implemented in `fn_gate_record` — decided at T-04, see D-015):
+- **Exit before the window opens** → `expired` (classification covers both ends; the guard sees
+  `valid_from`).
+- **Late return is ALWAYS accepted** once a valid exit exists — rejecting a student who is
+  *coming back* would strand them at the gate and freeze the application; strictness lives at the
+  exit window, admins can revoke if ever needed.
+- **Return without a recorded exit** → `staff_rejected` (manual verification; log kept, no transition).
+- **Unknown tokens/codes** → `invalid_token` with NO log row (logs reference a pass id).
+- Double decisions are structurally impossible: after approval/rejection the application leaves
+  `under_review`, and the decide guard rejects anything other than `submitted`/`under_review`.
+
+
 ## 7. Migrations plan (files to be authored)
 
 | Migration | Contents | Status |
@@ -146,8 +163,8 @@ Emergency/expedited: submit function emits only a `hod` step.
 | `0002_profiles_policy_fix.sql` | T-02a audit hotfix: self-update scoped by column GRANTs (`full_name`/`phone`) replacing the column-open UPDATE policy (P0); case-insensitive roll unique (`lower(roll_number)`, partial); role helpers revoked from anon | ✅ applied — T-02a |
 | `0003_schema_applications.sql` | remaining tables/enums/indexes/constraints: `applications`, `approval_steps`, `gate_passes`, `documents`, `approval_actions`, `notifications`, `audit_logs`, `approval_rules` | ✅ applied — T-03 |
 | `0004_rls_policy_matrix.sql` | RLS enable + policies per §2 for the tables above (append-only enforcement for history tables; workflow UPDATE constraints live in the functions) | ✅ applied — T-03 |
-| `0005_workflow.sql` | SECURITY DEFINER transition functions (§5) with chain-order enforcement (no bypass) | ⬜ T-04 |
-| `0006_triggers.sql` | notification triggers, remaining `updated_at` touches | ⬜ T-04 |
+| `0005_workflow.sql` | SECURITY DEFINER transition functions (§5) with chain-order enforcement (no bypass); `private.app_secrets` schema (D-015 QR secret); client EXECUTE labeled (fn_issue_pass/system-only) | ✅ applied — T-04 |
+| `0006_triggers.sql` | pass-issuance trigger on app-status → `approved`; **absolute append-only guards** (BEFORE UPDATE/DELETE RAISE on approval_actions, gate_verification_logs, audit_logs — binds owner/definer too, grants alone cover only client roles); no remaining `updated_at` touches (0001/0003 cover every timestamped table; history tables are timeless) | ✅ applied — T-04 |
 | `0007_seed.sql` | **synthetic** demo data only (see §8) | ⬜ T-05 |
 
 Run: `supabase db reset` (local; migrations apply on `start`/`reset`) / applied to the cloud project

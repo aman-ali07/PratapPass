@@ -128,3 +128,18 @@ PUBLIC). Roll uniqueness is case-insensitive via expression index `lower(roll_nu
 **Consequences** Admin provisioning paths keep full write via service_role/definer functions.
 Future column-scoped edits must follow the same policy+grant pattern (documented in
 `DATABASE.md` §2).
+
+### D-015 — QR token = deterministic HMAC; issuance via trigger · **Active** · 2026-10-23
+**Context** Closes KI-012 before T-04's `fn_issue_pass` bakes the token format in: a random raw
+token could never be re-rendered for a second QR fetch/print, and a token *table* contradicts
+the single-plane design. Gate log rows must reference a pass (unknown probes cannot be logged).
+**Decision** `raw = HMAC-SHA256(qr_token_secret, gate_passes.id)` (hex); only `SHA-256(raw)` is
+stored. Determinism lets the T-10 QR route re-derive the raw token from the pass id — no token
+storage, no plaintext, revocation still rebinds via `revoked_at`. Secret lives in
+`private.app_secrets` (non-API schema, all client roles revoked) — single DB-side source of truth
+read by `fn_issue_pass`; the QR route reads it through the service-role client. Pass issuance is
+a 0006 trigger on the application's transition to `approved` (the decide function only decides).
+**Consequences** Rotation invalidates previously issued QRs but pass codes (`MPGI-*`) stay valid —
+guards can fall back to code entry. Go-live must provision the production secret (KI-002);
+issuance fails loudly (never silently) without it. Edge semantics (late returns accepted, unknown
+probes unlogged) are specified in `DATABASE.md` §6 addendum.

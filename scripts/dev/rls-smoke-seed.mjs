@@ -15,19 +15,29 @@ const admin = createClient(url, serviceKey, {
 const FAMILIES = [
   { email: "smoke.student2@pratappass.test", full_name: "Smoke Student II", roll_number: "DEMO24002" },
   { email: "smoke.faculty@pratappass.test", full_name: "Smoke Faculty", roll_number: null },
+  { email: "smoke.hod@pratappass.test", full_name: "Smoke HOD", roll_number: null },
+  { email: "smoke.security@pratappass.test", full_name: "Smoke Security", roll_number: null },
   { email: "smoke.admin@pratappass.test", full_name: "Smoke Admin", roll_number: null },
 ];
 
 for (const spec of FAMILIES) {
-  const { data, error } = await admin.auth.admin.createUser({
+  const created = await admin.auth.admin.createUser({
     email: spec.email,
     email_confirm: true,
     user_metadata: { full_name: spec.full_name, ...(spec.roll_number ? { roll_number: spec.roll_number } : {}) },
   });
-  if (error) {
-    console.error("createUser failed:", spec.email, error.message);
-    process.exit(1);
+  if (created.error) {
+    // Idempotent: reruns after db resets hit users that still exist in the
+    // auth schema — reuse that row instead of aborting the whole seed.
+    const existing = await admin.auth.admin.listUsers();
+    const found = existing.data.users.find((u) => u.email === spec.email);
+    if (!found) {
+      console.error("createUser failed:", spec.email, created.error.message);
+      process.exit(1);
+    }
+    console.log("reusing existing user:", spec.email, found.id);
+  } else {
+    console.log("created user:", created.data.user.email, created.data.user.id);
   }
-  console.log("created user:", data.user.email, data.user.id);
 }
 console.log("smoke users ready (roles/departments are set via SQL next)");

@@ -300,6 +300,74 @@ isOneToOne: false
             "check_roll_number_available":
 { Args: { "candidate": string }; Returns: boolean
                            },
+"fn_decide_application":
+{ Args: { "p_action": string,"p_application_id": string,"p_remarks"?: string }; Returns: {
+              "application_id": string,
+"approver_role": Database["public"]['Enums']["user_role"],
+"assigned_to": string | null,
+"created_at": string,
+"decided_at": string | null,
+"decided_by": string | null,
+"department_id": string,
+"id": string,
+"status": Database["public"]['Enums']["step_status"],
+"step_order": number,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "approval_steps"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"fn_gate_record":
+{ Args: { "p_event": Database["public"]['Enums']["verification_event"],"p_token_or_code": string }; Returns: Json
+                           },
+"fn_issue_pass":
+{ Args: { "p_application_id": string }; Returns: {
+              "application_id": string,
+"expires_at": string,
+"id": string,
+"issued_at": string,
+"pass_code": string | null,
+"revoked_at": string | null,
+"token_hash": string,
+"valid_from": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "gate_passes"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"fn_mark_notifications_read":
+{ Args: { "p_ids": (string)[] }; Returns: number
+                           },
+"fn_provide_info":
+{ Args: { "p_application_id": string,"p_text": string }; Returns: undefined
+                           },
+"fn_submit_application":
+{ Args: { "p_departure_at": string,"p_docs"?: Json,"p_expected_return_at": string,"p_explanation": string,"p_reason": Database["public"]['Enums']["gate_reason"] }; Returns: {
+              "additional_info": string | null,
+"created_at": string,
+"decided_at": string | null,
+"department_id": string,
+"departure_at": string,
+"expected_return_at": string,
+"explanation": string,
+"id": string,
+"reason": Database["public"]['Enums']["gate_reason"],
+"status": Database["public"]['Enums']["app_status"],
+"student_id": string,
+"submitted_at": string,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "gate_pass_applications"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "get_user_department":
 { Args: { "uid": string }; Returns: string
                            },
