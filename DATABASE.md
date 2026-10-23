@@ -1,7 +1,7 @@
 # DATABASE — PratapPass
 
-Status: **schema designed; migrations 0001–0002 applied (T-02 auth slice + T-02a hotfix);
-0003–0007 planned** (T-03/T-04/T-05 author them; this document is the normative source).
+Status: **migrations 0001–0006 applied** (T-02 auth slice + T-02a hotfix → T-05 seed policy);
+demo seed lives OUTSIDE migrations in `supabase/seed.sql` (this document is the normative source).
 
 Conventions: UUID PKs (`gen_random_uuid()`), `created_at`/`updated_at` `timestamptz` not null
 defaults via trigger touch, all FKs explicit, RLS **enabled on every table**, enforcement of
@@ -165,7 +165,7 @@ Emergency/expedited: submit function emits only a `hod` step.
 | `0004_rls_policy_matrix.sql` | RLS enable + policies per §2 for the tables above (append-only enforcement for history tables; workflow UPDATE constraints live in the functions) | ✅ applied — T-03 |
 | `0005_workflow.sql` | SECURITY DEFINER transition functions (§5) with chain-order enforcement (no bypass); `private.app_secrets` schema (D-015 QR secret); client EXECUTE labeled (fn_issue_pass/system-only) | ✅ applied — T-04 |
 | `0006_triggers.sql` | pass-issuance trigger on app-status → `approved`; **absolute append-only guards** (BEFORE UPDATE/DELETE RAISE on approval_actions, gate_verification_logs, audit_logs — binds owner/definer too, grants alone cover only client roles); no remaining `updated_at` touches (0001/0003 cover every timestamped table; history tables are timeless) | ✅ applied — T-04 |
-| `0007_seed.sql` | **synthetic** demo data only (see §8) | ⬜ T-05 |
+| `supabase/seed.sql` | **synthetic** demo data only (§8) — identities incl. GoTrue-required `auth.users` shape (zero-uuid `instance_id`, provider `raw_app_meta_data`, empty token strings) + `auth.identities` rows; fixed UUIDs; every insert idempotent (`on conflict`/`where not exists`) | ✅ T-05 |
 
 Run: `supabase db reset` (local; migrations apply on `start`/`reset`) / applied to the cloud project
 by CLI push with user-provided credentials (KI-002, go-live). Every migration must be reversible in
@@ -175,4 +175,9 @@ effect or paired with a documented `down` note.
 
 Only clearly synthetic identities (fake roll numbers like `24FAKE0001`, placeholder names), a fake
 one-page PDF/PNG "prescription" asset, and a demo rule set. **Never** real student names, roll
-numbers, or medical documents; seed file warns and is excluded from production applies.
+numbers, or medical documents. Mechanism: the file lives at `supabase/seed.sql` — the CLI seed
+path that ONLY `supabase db reset` / dev seeding executes; `supabase db push` (cloud applies)
+never runs it, which is why no seed migration exists. Proven: `db reset` → counts
+(6 users / 3 apps / 1 issued pass / 2 gate logs / 4 notifications) → byte-identical replay keeps
+every count; all five demo identities sign in via GoTrue and read their own profile
+(`scripts/dev/seed-login-check.mjs`).
