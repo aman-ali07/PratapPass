@@ -11,8 +11,11 @@ enabling conditions referenced to `DATABASE.md` and `TASKS.md`).
   client-writable** (no INSERT/UPDATE policy allows role changes outside the admin function), and
   every session-sensitive read re-derives the role server-side from `profiles` (no trust in client
   claims beyond Supabase's own `sub`).
-- Middleware guards route groups by role; a valid session for the wrong role is redirected — never
-  an error page that leaks the existence of a resource.
+- Middleware performs session refresh + **coarse identity gating** (session vs anonymous, per
+  `middleware.ts`); role-granular route protection lives with the portal layouts/pages as they
+  land (T-06+). A valid session for the wrong role is redirected server-side — never an error
+  page that leaks the existence of a resource. (At T-02 only `/student` exists; midterm status
+  is stated here to keep §1 honest as route groups are added.)
 
 ## 2. Authorization matrix (enforced by RLS — see `DATABASE.md` §2 policies)
 

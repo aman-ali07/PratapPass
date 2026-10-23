@@ -1,6 +1,7 @@
 # ARCHITECTURE — PratapPass
 
-Status: **design blueprint** (scaffold arrives at task T-01; see `TASKS.md`).
+Status: **design blueprint, being implemented** — T-01 scaffold + T-02/T-02a auth live; portal
+subsystems arrive T-03+ (see `TASKS.md`).
 
 ---
 

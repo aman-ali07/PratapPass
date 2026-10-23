@@ -1,7 +1,8 @@
 # PRD — PratapPass (Digital College Gate Pass & Medical Approval System)
 
 Institution: **Maharana Pratap Group of Institutions (MPGI), Kanpur**
-Status: requirements finalized; **nothing implemented yet** (see `TASKS.md`).
+Status: requirements finalized; **T-01 (scaffold), T-02/T-02a (auth + policies on the local
+Supabase stack) implemented with evidence** — remaining milestones planned (see `TASKS.md`).
 
 ---
 

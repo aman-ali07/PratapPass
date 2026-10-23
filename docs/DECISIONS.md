@@ -79,9 +79,10 @@ their doc files would restate TASKS/TECH_STACK without any factual content. They
 T-15/first release (TASKS §deferred), preventing invented-history documentation.
 
 ### D-011 — Documentation marked "planned", never "implemented" · **Active** · 2026-10-23
-Repository was empty at setup. Every doc asserts the **documentation-foundation** status banner;
-all features described as planned; "Completed work: none" states the truth in `TASKS.md`. No
-historical claims or fabricated changelog dates are permitted.
+Repository was empty at setup. Every doc asserted the **documentation-foundation** status banner;
+all features described as planned; "Completed work: none" stated the truth in `TASKS.md` *at that
+date*. No historical claims or fabricated changelog dates are permitted — banners must be updated
+as milestones complete (T-01/T-02a now), never allowed to drift stale in either direction.
 
 ### D-012 — MPGI theme tokens finalized from the live site kit · **Active** · 2026-10-23
 **Context** Brief demanded "college website similarity" (MPGI); the site autopsy identified the

@@ -1,7 +1,8 @@
 # PratapPass
 
-> **Status: 🚧 Build in progress — T-01 scaffold complete (MPGI theme compiled, checks green).
-> Portal features pending: see [`TASKS.md`](TASKS.md).**
+> **Status: 🚧 Build in progress — T-01 (scaffold/MPGI theme) and T-02/T-02a (auth + profile
+> policies on the local Supabase CLI stack) are complete with evidence. Portal features pending:
+> see [`TASKS.md`](TASKS.md).**
 > Data/auth/UI features remain planned until their task is marked ✅ with evidence.
 
 **PratapPass** is the digital gate-pass and medical document approval system for **Maharana Pratap
@@ -63,14 +64,21 @@ Requirements and detailed user stories: see `PRD.md`.
 - *(now)* Local-first dev: the pinned Supabase CLI runs a full local stack — no cloud project needed until go-live (D-013)
 - *(go-live, T-15)* A Supabase cloud project (Postgres + Auth + Storage) — keys are pasted into `.env.local` and migrations are pushed with `supabase db push` (KI-002)
 
-## Setup (verified at T-01 scaffold)
+## Setup (local-first — verified at T-02a)
 
 ```bash
 git clone <repository-url> pratappass && cd pratappass
 npm install
-cp .env.example .env.local   # fill values from your Supabase project (see .env.example)
-npm run dev                  # http://localhost:3000
+./node_modules/.bin/supabase start        # local Supabase stack (API/Gateway/Auth/DB) — D-013
+./node_modules/.bin/supabase status -o env # generates NEXT_PUBLIC_* + SERVICE_ROLE values
+# place the three Supabase vars + NEXT_PUBLIC_SITE_URL=http://localhost:3000 into .env.local
+./node_modules/.bin/supabase db reset     # applies supabase/migrations/0001+0002
+npm run dev                               # http://localhost:3000
 ```
+
+> *(go-live, T-15)* `cp .env.example .env.local` is then replaced by the **cloud** project's keys;
+> migrations are pushed with `supabase db push`. Cloud parity settings: email confirmations on,
+> password minimum length 8 (see `KNOWN_ISSUES.md` KI-002).
 
 > Environment variables are documented in `.env.example` and `SECURITY.md`. **Never commit `.env*`
 > files.**

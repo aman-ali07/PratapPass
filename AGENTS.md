@@ -10,9 +10,10 @@ online (with medical document uploads), faculty/HOD approve through a configurab
 staff verify approved passes via QR code, and administrators manage the system with analytics and
 audit trails.
 
-**Status: documentation foundation only — no application code exists yet.** Every feature described
-in the documentation is **planned** unless `TASKS.md` explicitly marks the implementing task as
-completed. Never describe unbuilt work as implemented.
+**Status: T-01 (scaffold/theme) and T-02/T-02a (Supabase auth on the local CLI stack) are
+implemented and verified — see `TASKS.md`.** Every feature described in the documentation is
+**planned** unless `TASKS.md` explicitly marks the implementing task as completed. Never describe
+unbuilt work as implemented.
 
 Full requirements live in `PRD.md`; system design in `ARCHITECTURE.md`.
 

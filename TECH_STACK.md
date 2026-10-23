@@ -1,8 +1,8 @@
 # TECH_STACK — PratapPass
 
-Status: **installed & pinned at T-01 (2026-10-23)** — web-layer versions below are actuals from
-`package.json`/lockfile. Supabase packages, Zod, QR, and test tooling install with their owning
-tasks (T-02…T-15) and get appended here at that point.
+Status: **web layer pinned at T-01; Supabase/auth layer pinned at T-02** (install timeline rows
+below carry actuals from `package.json`/lockfile). Remaining packages (QR, tests) install with
+their owning tasks (T-10/T-15) and get appended here at that point.
 
 ## Installed (T-01, pinned)
 

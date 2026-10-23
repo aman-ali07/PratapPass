@@ -1,7 +1,7 @@
 # DATABASE — PratapPass
 
-Status: **schema designed; migrations not yet written** (tasks T-03/T-04 write
-`supabase/migrations/*.sql`; this document is the normative source for them).
+Status: **schema designed; migrations 0001–0002 applied (T-02 auth slice + T-02a hotfix);
+0003–0007 planned** (T-03/T-04/T-05 author them; this document is the normative source).
 
 Conventions: UUID PKs (`gen_random_uuid()`), `created_at`/`updated_at` `timestamptz` not null
 defaults via trigger touch, all FKs explicit, RLS **enabled on every table**, enforcement of
