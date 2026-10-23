@@ -17,16 +17,6 @@ import { signOutAction } from "./actions";
 
 export const metadata: Metadata = { title: "My dashboard — PratapPass" };
 
-// Narrow local type until T-03 ships `supabase gen types` (DATABASE.md §7).
-type UserRole = "student" | "faculty" | "hod" | "security" | "admin";
-
-type ProfileRow = {
-  full_name: string;
-  roll_number: string | null;
-  role: UserRole;
-  department: { name: string } | null;
-};
-
 export default async function StudentDashboard() {
   const supabase = await createSupabaseServerClient();
 
@@ -37,17 +27,16 @@ export default async function StudentDashboard() {
     redirect("/login?next=%2Fstudent");
   }
 
-  const { data, error } = await supabase
+  const { data: profile, error } = await supabase
     .from("profiles")
     .select("full_name, roll_number, role, department:departments(id, name)")
     .eq("id", user.id)
-    .returns<ProfileRow[]>();
+    .maybeSingle();
 
   if (error) {
     // Server-side only: PostgREST messages can carry policy/table internals.
     console.error("student profile fetch failed:", error.message, error.code);
   }
-  const profile = data?.[0];
 
   return (
     <div className="flex min-h-svh flex-col">

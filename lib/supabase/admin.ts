@@ -3,6 +3,7 @@ import "server-only";
 import { createClient } from "@supabase/supabase-js";
 
 import { env } from "@/lib/env";
+import type { Database } from "@/lib/supabase/database.types";
 
 /**
  * Service-role client (SECURITY.md §1/§7): bypasses RLS. Import ONLY in
@@ -16,7 +17,7 @@ export function createSupabaseAdminClient() {
       "SUPABASE_SERVICE_ROLE_KEY is not set — admin/service operations are unavailable.",
     );
   }
-  return createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
+  return createClient<Database>(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }

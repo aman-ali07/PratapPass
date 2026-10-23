@@ -4,6 +4,7 @@ import { createServerClient } from "@supabase/ssr";
 import type { CookieOptions } from "@supabase/ssr";
 
 import { env } from "@/lib/env";
+import type { Database } from "@/lib/supabase/database.types";
 
 /**
  * Server client for server components / server actions / route handlers,
@@ -16,24 +17,28 @@ import { env } from "@/lib/env";
  */
 export async function createSupabaseServerClient() {
   const cookieStore = await cookies();
-  return createServerClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY, {
-    cookies: {
-      getAll() {
-        return cookieStore.getAll();
-      },
-      setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
-        try {
-          for (const { name, value, options } of cookiesToSet) {
-            cookieStore.set(name, value, options);
+  return createServerClient<Database>(
+    env.NEXT_PUBLIC_SUPABASE_URL,
+    env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet: { name: string; value: string; options?: CookieOptions }[]) {
+          try {
+            for (const { name, value, options } of cookiesToSet) {
+              cookieStore.set(name, value, options);
+            }
+          } catch {
+            // Server components cannot write cookies (Next throws on the
+            // attempt). In server actions the cookie store IS writable, but
+            // middleware performs the durable refresh on every request — if a
+            // write fails here the worst outcome is a dropped session cookie
+            // (user sees the login page again), never an authz bypass.
           }
-        } catch {
-          // Server components cannot write cookies (Next throws on the
-          // attempt). In server actions the cookie store IS writable, but
-          // middleware performs the durable refresh on every request — if a
-          // write fails here the worst outcome is a dropped session cookie
-          // (user sees the login page again), never an authz bypass.
-        }
+        },
       },
     },
-  });
+  );
 }

@@ -54,8 +54,10 @@ RLS: student select own · approver select limited to applications inside their 
 
 ### `approval_steps`
 `application_id` FK · `step_order` int ≥1 · `approver_role` CHECK IN (`faculty`,`hod`) ·
-`department_id` FK (scope of the step) · `status step_status` DEFAULT `pending` · `decided_by` ·
-`decided_at` · UNIQUE `(application_id, step_order)`.
+`department_id` FK (scope of the step) · `assigned_to` FK→profiles NULL (**explicit assignment —
+audit addition; NULL = any staff of the step's role in that department**) ·
+`status step_status` DEFAULT `pending` · `decided_by` · `decided_at` ·
+UNIQUE `(application_id, step_order)`.
 Built by the submit function from `approval_rules` (expedited: single `hod` step). RLS: scoped read —
 student (own, for timeline), step-assignee role in scope, admin.
 
@@ -67,8 +69,9 @@ exist** — history is immutable to every role, including admins.
 
 ### `gate_passes`
 `application_id` UNIQUE FK · `token_hash` UNIQUE NOT NULL (SHA-256 of raw token; raw token appears
-only inside the QR URL) · `issued_at` DEFAULT now() · `valid_from`, `expires_at` (from
-`approval_rules.pass_validity_hours` bounded by expected return) · `revoked_at` NULL.
+only inside the QR URL) · `pass_code` UNIQUE-when-present (human pass code, PRD SE-1 — set by
+`fn_issue_pass`; the QR token stays machine-only) · `issued_at` DEFAULT now() · `valid_from`,
+`expires_at` (from `approval_rules.pass_validity_hours` bounded by expected return) · `revoked_at` NULL.
 RLS: student select own · hod/admin select (dept/all) · **security reads only via verify function**;
 revocation only via server function.
 
@@ -81,8 +84,8 @@ Insert via gate function only.
 `user_id` FK · `type` CHECK (`application_submitted`,`review_required`,`decision_made`,`info_requested`,
 `info_received`,`pass_issued`) · `title`, `body` · `application_id` FK NULL · `read_at` NULL.
 Index `(user_id, read_at NULLS FIRST, created_at DESC)`.
-RLS: select own; update limited to `read_at` (own rows); insert via workflow functions (triggers)
-only — no client inserts.
+RLS: select own; update limited to `read_at` (own rows — implemented as column GRANT `UPDATE (read_at)`
+in 0003 + own-row policy in 0004); insert via workflow functions (triggers) only — no client inserts.
 
 ### `audit_logs` — **append-only**
 `actor_id` FK NULL (NULL = system trigger) · `action` text (`application.submitted`,
@@ -94,11 +97,12 @@ RLS: select admin; append via functions; no UPDATE/DELETE.
 ## 3. Configuration table (added by decision D-008)
 
 ### `approval_rules`
-Per ``(department_id NULL = global default, reason)`` (UNIQUE pair):
-`chain jsonb NOT NULL` (ordered `["faculty","hod"]` array validated by CHECK/ `jsonb_array_elements` ·
-`requires_medical_document bool DEFAULT (reason='medical')` · `pass_validity_hours int DEFAULT 12` ·
-`expedited bool COMPUTED/DEFAULT (reason='emergency' → chain ["hod"])` — read-only enforced by
-function). Editable by admin UI only.
+Per ``(department_id NULL = global default, reason)`` (UNIQUE pair, `NULLS NOT DISTINCT`):
+`chain jsonb NOT NULL` (ordered array, 1–2 elements per MVP; CHECK enforces `emergency ⇒ ["hod"]`
+— D-007: emergency is always expedited) · `requires_medical_document bool NOT NULL` (set by admin
+UI/seed, **not** a derived column — the drafted auto-default from `reason` is unimplementable in
+Postgres DEFAULTs and admin control is safer) · `pass_validity_hours int DEFAULT 12 CHECK 1..720`.
+Editable by admin UI only; read only by admins (RLS) — workflow functions read via definer path.
 
 ## 4. Storage
 
@@ -140,8 +144,8 @@ Emergency/expedited: submit function emits only a `hod` step.
 |---|---|---|
 | `0001_profiles_auth.sql` | `pgcrypto`; `user_role` enum; `departments`, `profiles` (+ indexes, `touch_updated_at`); `handle_new_user` bootstrap trigger on `auth.users`; role helpers `get_user_role`/`is_admin`; `check_roll_number_available` RPC; RLS on both tables (authenticated select, profile update by self, department writes closed until admin functions) | ✅ applied — T-02 |
 | `0002_profiles_policy_fix.sql` | T-02a audit hotfix: self-update scoped by column GRANTs (`full_name`/`phone`) replacing the column-open UPDATE policy (P0); case-insensitive roll unique (`lower(roll_number)`, partial); role helpers revoked from anon | ✅ applied — T-02a |
-| `0003_schema_applications.sql` | remaining tables/enums/indexes/constraints: `applications`, `approval_steps`, `gate_passes`, `documents`, `approval_actions`, `notifications`, `audit_logs`, `approval_rules` | ⬜ T-03 |
-| `0004_rls_policy_matrix.sql` | RLS enable + policies per §2 for the tables above (append-only enforcement for history tables; workflow UPDATE constraints live in the functions) | ⬜ T-03 |
+| `0003_schema_applications.sql` | remaining tables/enums/indexes/constraints: `applications`, `approval_steps`, `gate_passes`, `documents`, `approval_actions`, `notifications`, `audit_logs`, `approval_rules` | ✅ applied — T-03 |
+| `0004_rls_policy_matrix.sql` | RLS enable + policies per §2 for the tables above (append-only enforcement for history tables; workflow UPDATE constraints live in the functions) | ✅ applied — T-03 |
 | `0005_workflow.sql` | SECURITY DEFINER transition functions (§5) with chain-order enforcement (no bypass) | ⬜ T-04 |
 | `0006_triggers.sql` | notification triggers, remaining `updated_at` touches | ⬜ T-04 |
 | `0007_seed.sql` | **synthetic** demo data only (see §8) | ⬜ T-05 |
