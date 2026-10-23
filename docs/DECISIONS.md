@@ -98,3 +98,19 @@ institution's real typography. Full kit-fidelity squared corners at radius 0 —
 modern-component ergonomics (e.g. focus-ring legibility).
 **Consequences** Closes KI-006; `DESIGN_SYSTEM.md` §1 is the binding palette. Site autopsy
 (WP 6.8/LiteSpeed/Elementor) exists purely as reference — PratapPass remains Next.js + Supabase.
+
+### D-013 — Local-first dual-target database (CLI stack now, cloud keys later) · **Active** · 2026-10-23
+**Context** Development began before the Supabase cloud project exists; the user supplies
+credentials only at the end ("at last I will put the supabase credentials" — tracked as KI-002).
+**Decision** `supabase/migrations/*` is the single source of truth. Dev runs against the local CLI
+stack (`./node_modules/.bin/supabase`, pinned devDependency 2.121.0); `.env.local` is generated
+from `supabase status -o env` for local. At go-live the SAME migrations are pushed to the cloud
+project (`supabase db push`) and `.env.local` is swapped to the cloud keys — no code changes
+expected (all clients are env-driven).
+**Alternatives** Blocking all progress until keys arrive — rejected; maintaining a divergent dev
+schema — rejected at this scale (the migration set is shared, so drift is impossible by
+construction).
+**Consequences** Local conveniences differ from cloud defaults: demo local keys, email
+confirmations off — the register flow already handles the cloud's no-session
+`needs-email-confirmation` path. Local `[analytics]` is disabled on this host (vector sidecar
+cannot read the Docker logging driver; KI-010) — no feature impact.

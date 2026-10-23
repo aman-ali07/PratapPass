@@ -23,9 +23,10 @@ tasks (T-02…T-15) and get appended here at that point.
 
 | Technology | Installs at | Purpose |
 |---|---|---|
-| `@supabase/supabase-js` ^2 + `@supabase/ssr` | T-02 | DB/Auth/Storage clients (anon server + `server-only` service-role) |
-| Supabase CLI (dev dep) | T-02/T-03 | local DB + migrations |
-| Zod ^4 | T-02 (first validated boundary) | shared schemas at every boundary |
+| `@supabase/supabase-js` ^2 + `@supabase/ssr` | T-02 → **installed, verified: 2.118.0 / 0.6.1** | DB/Auth/Storage clients (anon server + `server-only` service-role) |
+| `server-only` | T-02 → **installed: 0.0.1** | build-time guard on the service-role module |
+| Supabase CLI (dev dep) | T-02 → **installed, pinned exact: 2.121.0** | local DB + migrations; cloud push at go-live (KI-002) |
+| Zod ^4 | T-02 → **installed, verified: 4.6.7** | shared schemas at every boundary (env, auth forms/actions) |
 | react-hook-form + `@hookform/resolvers` | T-06 (decide then) | form integration pattern |
 | `qrcode` ^1.5 | T-10 | server-side QR generation |
 | Vitest + Testing Library | T-15 | authorization-matrix + workflow tests |

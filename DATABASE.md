@@ -133,17 +133,18 @@ Emergency/expedited: submit function emits only a `hod` step.
 
 ## 7. Migrations plan (files to be authored)
 
-| Migration | Contents |
-|---|---|
-| `0001_init.sql` | extensions (`pgcrypto`), enums, all tables, indexes, constraints |
-| `0002_rls.sql` | RLS enable + policies per §2, grants (no UPDATE on workflow columns) |
-| `0003_workflow.sql` | SECURITY DEFINER functions (§5) + traps/tests bare |
-| `0004_triggers.sql` | `updated_at` touches, notification triggers |
-| `0005_seed.sql` | **synthetic** demo data only (see §8) |
+| Migration | Contents | Status |
+|---|---|---|
+| `0001_profiles_auth.sql` | `pgcrypto`; `user_role` enum; `departments`, `profiles` (+ indexes, `touch_updated_at`); `handle_new_user` bootstrap trigger on `auth.users`; role helpers `get_user_role`/`is_admin`; `check_roll_number_available` RPC; RLS on both tables (authenticated select, profile update by self, department writes closed until admin functions) | ✅ applied — T-02 |
+| `0002_schema_applications.sql` | remaining tables/enums/indexes/constraints: `applications`, `approval_steps`, `gate_passes`, `documents`, `approval_actions`, `notifications`, `audit_logs`, `approval_rules` | ⬜ T-03 |
+| `0003_rls_policy_matrix.sql` | RLS enable + policies per §2 for the tables above (append-only enforcement for history tables; workflow UPDATE constraints live in the functions) | ⬜ T-03 |
+| `0004_workflow.sql` | SECURITY DEFINER transition functions (§5) with chain-order enforcement (no bypass) | ⬜ T-04 |
+| `0005_triggers.sql` | notification triggers, remaining `updated_at` touches | ⬜ T-04 |
+| `0006_seed.sql` | **synthetic** demo data only (see §8) | ⬜ T-05 |
 
-Run: `supabase migrations up` (local) / applied to the cloud project by CLI with user-provided
-credentials (KI-002). Every migration must be reversible in effect or paired with a documented
-`down` note.
+Run: `supabase db reset` (local; migrations apply on `start`/`reset`) / applied to the cloud project
+by CLI push with user-provided credentials (KI-002, go-live). Every migration must be reversible in
+effect or paired with a documented `down` note.
 
 ## 8. Seed data policy
 

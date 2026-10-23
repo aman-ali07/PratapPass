@@ -37,3 +37,6 @@ ehthumbs.db
 
 # Deploy
 .vercel
+
+# IDE/tool agent state
+.serena/

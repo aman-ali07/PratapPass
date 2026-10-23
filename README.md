@@ -60,9 +60,8 @@ Requirements and detailed user stories: see `PRD.md`.
 ## Prerequisites
 
 - Node.js 20+ and npm
-- A Supabase project (Postgres + Auth + Storage) — create one at [supabase.com](https://supabase.com)
-- Supabase CLI (for migrations) — optional for app development, required for DB workflows
-- *Exact prerequisite steps will be verified and finalized with the project scaffold (task T-01).*
+- *(now)* Local-first dev: the pinned Supabase CLI runs a full local stack — no cloud project needed until go-live (D-013)
+- *(go-live, T-15)* A Supabase cloud project (Postgres + Auth + Storage) — keys are pasted into `.env.local` and migrations are pushed with `supabase db push` (KI-002)
 
 ## Setup (verified at T-01 scaffold)
 
@@ -84,7 +83,7 @@ npm run dev                  # http://localhost:3000
 | `npm run build` / `npm start` | Production build / serve |
 | `npm run lint` / `npm run typecheck` | ESLint / TypeScript strict checks |
 | `npm run test` | Test suite (authorization + workflow tests) — *added at T-15* |
-| `npx supabase ...` | Local DB + migrations — *from T-02 onward* |
+| `./node_modules/.bin/supabase start` / `status -o env` / `db reset` | Local DB stack (pinned CLI) — migrations apply on `start`/`reset`; `status -o env` generates `.env.local` values |
 
 ## Usage
 

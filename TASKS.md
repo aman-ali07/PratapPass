@@ -13,10 +13,16 @@ Legend: ⬜ planned · 🟨 in progress · ✅ done · 🚫 dropped.
   **Evidence**: `tsc --noEmit` + `eslint` clean; `next build` static-prerender; dev boot on :3100 —
   `<title>PratapPass …`, hero, Button (`<a class="group/button … bg-secondary" href="/">`) and
   compiled tokens verified in served HTML/CSS.
-- Documentation foundation (2026-10-23): full doc index in `README.md`. Portal code: none yet.
+- Documentation foundation (2026-10-23): full doc index in `README.md`.
+- **T-02 (2026-10-23)**: Supabase integration + auth on the local CLI stack — login/register (roll
+  number + email + password via `check_roll_number_available` RPC and the `auth.users`→`profiles`
+  trigger), sign-out, session middleware, `/student` placeholder dashboard; migration
+  `0001_profiles_auth.sql`. Evidence: typecheck/lint/build clean; anonymous `/student` → 307 login
+  redirect; demo signup, duplicate-roll rejection, wrong-password rejection verified; profile row
+  verified in psql. Details + deviations in the task table.
 
-**Sequence note:** next is T-02 (Supabase integration + auth) — blocked on keys (KI-002) or local
-Supabase CLI.
+**Sequence note:** next is T-03 (remaining schema + RLS matrix) while the local stack stays up;
+T-06 (student submission) follows. Cloud credentials (KI-002) are needed only at go-live.
 
 ## Planned tasks
 
@@ -26,10 +32,10 @@ Supabase CLI.
 | ID | Task | Depends on | Acceptance criteria (verified by…) | Status |
 |---|---|---|---|---|
 | **T-01** | **Scaffold**: `create-next-app` (TS, App Router), Tailwind 4, shadcn/ui init, `lib/supabase/*` placeholders, lint/typecheck/format scripts, folder skeleton per `ARCHITECTURE.md` §5, `.gitignore` covers `.env*` | keys KI-002 optional | ✅ 2026-10-23 — `npm run dev` boots (`:3100` evidence); typecheck/lint clean; `npm run build` static-prerender OK; shadcn Button renders (`data-slot="button"` + `group/button`, secondary variant via `render={<Link/>}`) — all real outputs | ✅ |
-| **T-02** | **Supabase integration**: clients (browser/server/server-only), env plumbing (`.env.local` from user keys or local CLI), auth: login/logout, **student registration w/ roll number**, session guard middleware, starter role-aware layout | T-01 | login/register run on real/local Supabase; created user lands in `profiles` as `student`; middleware blocks `/student` for anonymous | ⬜ |
-| **T-03** | **Schema + RLS**: migrations 0001–0002 (tables, enums, indexes, policies per `DATABASE.md`) | T-02 | `supabase db reset` runs all migrations clean; policy smoke queries split into pass/fail cases per matrix (student sees own only; cross-student query returns 0 rows) | ⬜ |
-| **T-04** | **Workflow functions**: migrations 0003–0004 (SECURITY DEFINER transition functions + triggers) | T-03 | unauthorized/forbidden transitions fail (attempts logged in unit table / function tests as planned in T-15 branch cases); approval chain order enforced (no bypass) | ⬜ |
-| **T-05** | **Seed**: `0005_seed.sql` synthetic demo data per `DATABASE.md` §8 | T-03, KI-001 | seed executes on local DB; all 5 roles + demo apps across each state exist; no real identities | ⬜ |
+| **T-02** | **Supabase integration**: clients (browser/server/server-only), env plumbing (`.env.local` from local CLI), auth: login/logout, **student registration w/ roll number**, session guard middleware, starter student layout | T-01 | login/register run on real/local Supabase; created user lands in `profiles` as `student`; middleware blocks `/student` for anonymous | ✅ 2026-10-23 — local CLI stack (D-013); `npm run build`/typecheck/lint clean; prod server: anonymous `GET /student` → `307 → /login?next=%2Fstudent`, `/login`+`/register` → 200; `scripts/dev/signup-demo.mjs` via public API: roll-check RPC `true→false` after signup, `signInWithPassword` OK, wrong password rejected `Invalid login credentials`; psql verified trigger-created row (`Demo Student / DEMO24001 / student`, dept unassigned). Absorbed the auth DB slice from T-03: migration `0001_profiles_auth.sql` (departments, profiles, `user_role`, bootstrap trigger, role helpers, roll-check RPC, RLS) — `DATABASE.md` §7 | ✅ |
+| **T-03** | **Schema + RLS**: migrations 0002–0003 (remaining tables/enums/indexes/constraints + policy matrix per `DATABASE.md` §7; auth tables' RLS already in 0001) | T-02 | `supabase db reset` runs all migrations clean; policy smoke queries split into pass/fail cases per matrix (student sees own only; cross-student query returns 0 rows) | ⬜ |
+| **T-04** | **Workflow functions**: migrations 0004–0005 (SECURITY DEFINER transition functions + triggers) | T-03 | unauthorized/forbidden transitions fail (attempts logged in unit table / function tests as planned in T-15 branch cases); approval chain order enforced (no bypass) | ⬜ |
+| **T-05** | **Seed**: `0006_seed.sql` synthetic demo data per `DATABASE.md` §8 | T-03, KI-001 | seed executes on local DB; all 5 roles + demo apps across each state exist; no real identities | ⬜ |
 | **T-06** | **Student submission**: `/student/apply` (conditional medical-document UI), upload validation (server-side magic bytes, size, type), private-bucket upload, notifications to approver; failed submission leaves no orphaned objects | T-03 | E2E submit produces app row + steps (per rules) + notification; invalid file types/sizes rejected with concrete errors; browser retry with network flap does not duplicate docs | ⬜ |
 | **T-07** | **Student tracking + notifications**: dashboard cards, history, application detail + timeline + remarks, `additional_info_required` answer path, notifications list/read | T-06,T-04 | status events visible in real time across two browser identities; answer-to-info path reaches approver; notifications appear on the acted-on events | ⬜ |
 | **T-08** | **Approver review**: queue scoped to actor (list + filters), detail view with document preview via `/api/documents/[id]` (audited, signed ≤5 min) | T-03,T-05 | out-of-scope app is 403/404 in UI + tests; document URL opens (expires); audit row exists for every issued URL | ⬜ |
