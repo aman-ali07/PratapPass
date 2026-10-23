@@ -9,7 +9,6 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { fieldErrorsFrom } from "@/lib/validation/field-errors";
 import { applicationSchema, documentFileSchema } from "@/lib/validation/application";
-
 /**
  * DB-function (P0001) messages that are already user-actionable copy; anything
  * else can carry Postgres internals, so it is logged server-side and swapped
@@ -172,4 +171,33 @@ export async function signOutAction() {
     redirect("/login?signout=failed");
   }
   redirect("/login");
+}
+
+/**
+ * Mark every unread notification of the signed-in user as read. The column
+ * GRANT `UPDATE (read_at)` + own-row RLS policy (0003/0004) pin the touch to
+ * the user's own unread rows — no workflow authority is involved, so a plain
+ * RLS-covered update is the whole implementation (no definer function).
+ */
+export async function markNotificationsReadAction() {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    redirect("/login");
+  }
+
+  const { error } = await supabase
+    .from("notifications")
+    .update({ read_at: new Date().toISOString() })
+    .eq("user_id", user.id)
+    .is("read_at", null);
+  if (error) {
+    // Never swallow: the banner state lets the user tell a failed update from a
+    // successful one.
+    console.error("mark-notifications-read failed:", error.message, error.code);
+    redirect("/student?notifications=error");
+  }
+  redirect("/student?notifications=read");
 }

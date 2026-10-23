@@ -28,9 +28,9 @@ directly.
 | `signIn` | guest | email, password | session-issued; honors validated `?next=` intra-site path |
 | `signOutAction` | any authenticated | — (none) | clears session cookies; failure surfaced via `/login?signout=failed` |
 | `submitApplicationAction(prevState, formData)` | student | reason, departure/return (UTC ISO converted client-side), explanation, document file (PDF/JPG/PNG ≤4 MB) | server-mediated upload (D-016): magic bytes are the content-type authority (declared/sniffed mismatch rejected), service-role bucket write to the final `{application_id}/{uuid}.{ext}` path, then `fn_submit_application` under the real session with a server-allocated application id (0008); a failed submit removes the uploaded object; audit + notifications |
-| `provideAdditionalInfo(appId, text)` | student | ≤ 2000 chars | only when `additional_info_required`; back to `under_review`; audit + notify approver |
+| `answerAdditionalInfoAction(prevState, formData)` | student | application id, answer ≤ 2000 chars (trimmed) | only while `additional_info_required` (re-checked in `fn_provide_info`); back to `under_review` with step resumed; audit + notify approver |
 | `decideApplication(appId, { approve \| reject \| request_info }, remarks)` | faculty/hod | remarks required on reject/request_info | Postgres `fn_decide_application` enforces chain order & scope; immutable history; notifications |
-| `markNotificationsRead(ids)` | user | owned ids only | RLS + ownership check |
+| `markNotificationsReadAction()` | user | — (all own unread) | RLS column-grant `UPDATE (read_at)` own unread rows only; failure surfaced via dashboard banner |
 | `recordGateEvent(tokenOrCode, { exit \| return })` | security | token/human pass code | `fn_gate_record`: classification, dedupe, completion |
 | Admin actions (T-12) | admin | departments/users/roles/rules | role changes audit-logged; admin cannot demote final admin without second admin (guard) |
 

@@ -48,7 +48,7 @@ ever served from a public URL.
 |---|---|---|
 | `/` | Public | Landing page (MPGI-styled): notices, hero, stats, links to portal/login |
 | `/login`, `/register` | Public | Auth screens (roll-number student signup; staff login) |
-| `/student` | student | Dashboard: my requests summary cards + live status |
+| `/student` | student | Dashboard: my requests summary cards + live status (near-real-time: 15 s server-component re-read) |
 | `/student/apply` | student | Application form (conditional medical upload) |
 | `/student/requests`, `/student/requests/[id]` | student | History; detail + timeline + remarks + info-update flow |
 | `/student/passes`, `/student/passes/[id]` | student | Approved passes; QR display + print/download |

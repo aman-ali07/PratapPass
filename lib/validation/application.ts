@@ -52,4 +52,17 @@ export const documentFileSchema = z
     error: "Only PDF, JPG or PNG documents are accepted.",
   });
 
+/**
+ * Provide-info answer (the `fn_provide_info` contract: 1–2000 characters after
+ * trim; ownership + state are re-checked inside the SECURITY DEFINER function).
+ */
+export const infoAnswerSchema = z.object({
+  applicationId: z.uuid({ error: "Malformed application reference." }),
+  text: z
+    .string()
+    .trim()
+    .min(1, { error: "Write your answer for the reviewers." })
+    .max(2000, { error: "Answer must fit in 2000 characters." }),
+});
+
 export type ApplicationInput = z.infer<typeof applicationSchema>;
