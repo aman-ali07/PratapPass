@@ -1,7 +1,7 @@
 # DATABASE — PratapPass
 
-Status: **migrations 0001–0008 applied** (T-02 auth slice + T-02a hotfix → T-05 seed → T-06
-storage/cap);
+Status: **migrations 0001–0009 applied** (T-02 auth slice + T-02a hotfix → T-05 seed → T-06
+storage/cap → T-08 staff/student profile read);
 demo seed lives OUTSIDE migrations in `supabase/seed.sql` (this document is the normative source).
 
 Conventions: UUID PKs (`gen_random_uuid()`), `created_at`/`updated_at` `timestamptz` not null
@@ -28,10 +28,11 @@ workflow-relevant columns.
 partial expression index on `lower(roll_number)`, 0002) · `phone` ·
 `department_id` FK→departments · `designation` (staff title) · timestamps.
 *Email lives only in `auth.users` (no drift-prone copy).*
-RLS (0001/0002): self select; self **update scoped by column GRANTs to
+RLS (0001/0002/0009): self select; self **update scoped by column GRANTs to
 `full_name`/`phone`** (Postgres has no column lists in `CREATE POLICY` — row scope is
 the policy, write scope is the grant) · admin all · faculty/hod select same-department
-students (queue context, planned 0003/0004) · security: none (verify function returns minimal view).
+**student rows** (queue context — planned in early drafts, landed as 0009 with T-08) ·
+security: none (verify function returns minimal view).
 
 ### `departments`
 `name` UNIQUE · `code` UNIQUE (e.g. `CSE`) · timestamps. Read: all authed; write: admin.
@@ -171,6 +172,7 @@ Emergency/expedited: submit function emits only a `hod` step.
 | `0006_triggers.sql` | pass-issuance trigger on app-status → `approved`; **absolute append-only guards** (BEFORE UPDATE/DELETE RAISE on approval_actions, gate_verification_logs, audit_logs — binds owner/definer too, grants alone cover only client roles); no remaining `updated_at` touches (0001/0003 cover every timestamped table; history tables are timeless) | ✅ applied — T-04 |
 | `0007_storage_bucket.sql` | private `medical-documents` bucket (4 MiB `file_size_limit`, PDF/JPG/PNG allowlist, idempotent); **no** `storage.objects` client policies — default deny holds, service-role writes only (D-016) | ✅ applied — T-06 |
 | `0008_document_cap_and_submit_id.sql` | document cap 10 MiB → 4 MiB (`byte_size` CHECK, D-016); `fn_submit_application` gains optional server-allocated `p_application_id` so uploads land on the FINAL `{application_id}/{uuid}.{ext}` path with no staging/move (five-param overload dropped; grants re-issued on the six-param identity) | ✅ applied — T-06 |
+| `0009_profiles_staff_student_read.sql` | the profiles read slice that DATABASE.md §2 had planned but 0003/0004 never authored: faculty/hod SELECT on same-department **student** rows (queue identity context; staff profiles and cross-dept students stay invisible; security gains nothing; D-014 write scope untouched) | ✅ applied — T-08 |
 | `supabase/seed.sql` | **synthetic** demo data only (§8) — identities incl. GoTrue-required `auth.users` shape (zero-uuid `instance_id`, provider `raw_app_meta_data`, empty token strings) + `auth.identities` rows; fixed UUIDs; every insert idempotent (`on conflict`/`where not exists`) | ✅ T-05 |
 
 Run: `supabase db reset` (local; migrations apply on `start`/`reset`) / applied to the cloud project

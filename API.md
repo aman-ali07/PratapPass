@@ -39,7 +39,7 @@ directly.
 | Endpoint | Method | Auth | Request | Response |
 |---|---|---|---|---|
 | `/api/passes/[id]/qr` | GET | student owner / admin | — | SVG/PNG QR encoding `{SITE}/verify?token=…` (raw token never stored server-side) |
-| `/api/documents/[id]` | GET | student owner, scoped approver, admin | — | `307` to short-lived signed URL (≤5 min) **after** audit append `document.signed_url_issued` |
+| `/api/documents/[id]` | GET | student owner, scoped approver, admin | — | `307` to short-lived signed URL (≤5 min) **after** audit append `document.signed_url_issued`; unknown **and out-of-scope ids return the same 404** (no existence oracle); audit failure fails closed (no URL is handed out) |
 | `/api/gate/verify` | POST | none (token is the credential) | `{ token }` | classification `{ result, pass: { holder_name, department, departure_window, exit_state } }` — **no reason, no medical data, no doc links** |
 | `/api/gate/record` | POST | security | `{ token, event }` | recording result; used by in-app security UI (phone camera via `/verify?token=` is the primary flow) |
 

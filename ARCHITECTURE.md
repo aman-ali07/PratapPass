@@ -53,8 +53,8 @@ ever served from a public URL.
 | `/student/requests`, `/student/requests/[id]` | student | History; detail + timeline + remarks + info-update flow |
 | `/student/passes`, `/student/passes/[id]` | student | Approved passes; QR display + print/download |
 | `/student/profile` | student | Profile & account |
-| `/approver` | faculty, hod | Decision queue for the actor's scope |
-| `/approver/requests/[id]` | faculty, hod | Detail: application + documents preview + timeline + decision panel |
+| `/approver/requests` | faculty, hod | Decision queue for the actor's scope (reachable pending step only; assignment honored by RLS) |
+| `/approver/requests/[id]` | faculty, hod | Detail: application + documents preview (audited ≤5-min 307, `/api/documents/[id]`) + timeline + decision panel (T-09) |
 | `/approver/history` | faculty, hod | Decided requests + processing times |
 | `/admin` | admin | Overview + pending/all requests monitor |
 | `/admin/departments`, `/admin/users`, `/admin/rules` | admin | People, departments, approval & document rules |
