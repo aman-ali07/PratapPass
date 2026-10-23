@@ -18,7 +18,6 @@ const KNOWN_MESSAGES = new Set([
   "Only faculty or HOD members may decide applications",
   "Application not found",
   "This application belongs to another department",
-  "No pending approval step matches this application",
   "You are not the assigned approver for the current step",
   "Remarks are required when rejecting or requesting information",
   "Remarks must fit in 1000 characters",
