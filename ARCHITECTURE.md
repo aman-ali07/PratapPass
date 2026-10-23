@@ -54,8 +54,8 @@ ever served from a public URL.
 | `/student/passes`, `/student/passes/[id]` | student | Approved passes; QR display + print/download |
 | `/student/profile` | student | Profile & account |
 | `/approver/requests` | faculty, hod | Decision queue for the actor's scope (reachable pending step only; assignment honored by RLS) |
-| `/approver/requests/[id]` | faculty, hod | Detail: application + documents preview (audited ≤5-min 307, `/api/documents/[id]`) + timeline + decision panel (T-09) |
-| `/approver/history` | faculty, hod | Decided requests + processing times |
+| `/approver/requests/[id]` | faculty, hod | Detail: application + documents preview (audited ≤5-min 307, `/api/documents/[id]`) + timeline + decision panel (rendered only when the reachable pending step matches the viewer; actions route through `fn_decide_application`) |
+| `/approver/history` | faculty, hod | The actor's OWN recorded decisions (append-only rows, actor-scoped) with processing time from submission |
 | `/admin` | admin | Overview + pending/all requests monitor |
 | `/admin/departments`, `/admin/users`, `/admin/rules` | admin | People, departments, approval & document rules |
 | `/admin/analytics`, `/admin/audit` | admin | Metrics; audit log viewer |

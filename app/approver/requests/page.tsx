@@ -98,11 +98,16 @@ export default async function ApproverQueuePage() {
     <div className="flex min-h-svh flex-col">
       <AppHeader
         right={
-          <form action={signOutAction}>
-            <Button type="submit" variant="secondary" size="sm">
-              Sign out
+          <div className="flex items-center gap-2">
+            <Button render={<Link href="/approver/history" />} variant="secondary" size="sm">
+              History
             </Button>
-          </form>
+            <form action={signOutAction}>
+              <Button type="submit" variant="secondary" size="sm">
+                Sign out
+              </Button>
+            </form>
+          </div>
         }
       />
 

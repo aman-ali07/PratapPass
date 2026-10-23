@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { AppFooter } from "@/components/layout/app-footer";
 import { AppHeader } from "@/components/layout/app-header";
+import { DecisionPanel } from "@/components/approver/decision-panel";
 import {
   ACTION_LABELS,
   REASON_LABELS,
@@ -66,7 +67,7 @@ export default async function ApproverDetailPage({
   const { data: application, error } = await supabase
     .from("gate_pass_applications")
     .select(
-      "id, department_id, reason, status, departure_at, expected_return_at, explanation, additional_info, submitted_at, student:profiles(full_name, roll_number), medical_documents(id, label, content_type, byte_size, uploaded_at), approval_steps(step_order, approver_role, status, decided_at), approval_actions(id, action, remarks, created_at, actor:profiles(full_name))",
+      "id, department_id, reason, status, departure_at, expected_return_at, explanation, additional_info, submitted_at, student:profiles(full_name, roll_number), medical_documents(id, label, content_type, byte_size, uploaded_at), approval_steps(step_order, approver_role, assigned_to, status, decided_at), approval_actions(id, action, remarks, created_at, actor:profiles(full_name))",
     )
     .eq("id", id)
     .maybeSingle();
@@ -84,6 +85,20 @@ export default async function ApproverDetailPage({
   const actions = [...(application.approval_actions ?? [])].sort(
     (a, b) => Date.parse(a.created_at) - Date.parse(b.created_at),
   );
+
+  // Reachable-decision check mirrors the queue's rule (min pending step, chain
+  // order) plus `fn_decide_application`'s guards: only then does the panel
+  // render — a stale UI never shows an action the function would refuse.
+  const decisionable = application.status === "submitted" || application.status === "under_review";
+  const pendingSteps = steps.filter((step) => step.status === "pending");
+  const reachableStep =
+    decisionable && pendingSteps.length > 0
+      ? pendingSteps.reduce((a, b) => (a.step_order <= b.step_order ? a : b))
+      : null;
+  const decisionByViewer =
+    reachableStep !== null &&
+    reachableStep.approver_role === profile.role &&
+    (reachableStep.assigned_to === null || reachableStep.assigned_to === user.id);
 
   return (
     <div className="flex min-h-svh flex-col">
@@ -182,6 +197,20 @@ export default async function ApproverDetailPage({
             )}
           </CardContent>
         </Card>
+
+        {decisionByViewer && reachableStep && (
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle className="text-base">Decision (step {reachableStep.step_order})</CardTitle>
+              <CardDescription>
+                Approving the final step issues the gate pass automatically.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <DecisionPanel applicationId={application.id} />
+            </CardContent>
+          </Card>
+        )}
 
         <Card className="mt-4">
           <CardHeader>
