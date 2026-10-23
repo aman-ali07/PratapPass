@@ -1,0 +1,56 @@
+# TASKS — PratapPass
+
+Legend: ⬜ planned · 🟨 in progress · ✅ done · 🚫 dropped.
+
+## Completed work
+
+- **T-01 — Scaffold** ✅ 2026-10-23: Next **15.5.28** / React **19.1.0** / Tailwind **4.3.3** /
+  TypeScript **5.9.3** + shadcn v4 (base-nova) with `Button, Card, Badge, Input, Label, Textarea,
+  Select, Dialog, Table, Tabs`. MPGI kit tokens compiled (`--primary #003366`, `--accent #F7AF2F`,
+  gold-gradient + hero-scrim utilities, Poppins via `next/font`); branded landing `app/page.tsx`,
+  `app/icon.svg`; scripts `dev/build/start/lint/typecheck`; `.gitignore` hardened (`*.tsbuildinfo`,
+  `.env*`) and repo git-initialized.
+  **Evidence**: `tsc --noEmit` + `eslint` clean; `next build` static-prerender; dev boot on :3100 —
+  `<title>PratapPass …`, hero, Button (`<a class="group/button … bg-secondary" href="/">`) and
+  compiled tokens verified in served HTML/CSS.
+- Documentation foundation (2026-10-23): full doc index in `README.md`. Portal code: none yet.
+
+**Sequence note:** next is T-02 (Supabase integration + auth) — blocked on keys (KI-002) or local
+Supabase CLI.
+
+## Planned tasks
+
+> Sequence: T-01 → T-02 → (T-03,T-06) → … Acceptance criteria are **verifiable** outputs, not
+> intentions. Insertion: keep one task per row; refactor only with the owner's consent.
+
+| ID | Task | Depends on | Acceptance criteria (verified by…) | Status |
+|---|---|---|---|---|
+| **T-01** | **Scaffold**: `create-next-app` (TS, App Router), Tailwind 4, shadcn/ui init, `lib/supabase/*` placeholders, lint/typecheck/format scripts, folder skeleton per `ARCHITECTURE.md` §5, `.gitignore` covers `.env*` | keys KI-002 optional | ✅ 2026-10-23 — `npm run dev` boots (`:3100` evidence); typecheck/lint clean; `npm run build` static-prerender OK; shadcn Button renders (`data-slot="button"` + `group/button`, secondary variant via `render={<Link/>}`) — all real outputs | ✅ |
+| **T-02** | **Supabase integration**: clients (browser/server/server-only), env plumbing (`.env.local` from user keys or local CLI), auth: login/logout, **student registration w/ roll number**, session guard middleware, starter role-aware layout | T-01 | login/register run on real/local Supabase; created user lands in `profiles` as `student`; middleware blocks `/student` for anonymous | ⬜ |
+| **T-03** | **Schema + RLS**: migrations 0001–0002 (tables, enums, indexes, policies per `DATABASE.md`) | T-02 | `supabase db reset` runs all migrations clean; policy smoke queries split into pass/fail cases per matrix (student sees own only; cross-student query returns 0 rows) | ⬜ |
+| **T-04** | **Workflow functions**: migrations 0003–0004 (SECURITY DEFINER transition functions + triggers) | T-03 | unauthorized/forbidden transitions fail (attempts logged in unit table / function tests as planned in T-15 branch cases); approval chain order enforced (no bypass) | ⬜ |
+| **T-05** | **Seed**: `0005_seed.sql` synthetic demo data per `DATABASE.md` §8 | T-03, KI-001 | seed executes on local DB; all 5 roles + demo apps across each state exist; no real identities | ⬜ |
+| **T-06** | **Student submission**: `/student/apply` (conditional medical-document UI), upload validation (server-side magic bytes, size, type), private-bucket upload, notifications to approver; failed submission leaves no orphaned objects | T-03 | E2E submit produces app row + steps (per rules) + notification; invalid file types/sizes rejected with concrete errors; browser retry with network flap does not duplicate docs | ⬜ |
+| **T-07** | **Student tracking + notifications**: dashboard cards, history, application detail + timeline + remarks, `additional_info_required` answer path, notifications list/read | T-06,T-04 | status events visible in real time across two browser identities; answer-to-info path reaches approver; notifications appear on the acted-on events | ⬜ |
+| **T-08** | **Approver review**: queue scoped to actor (list + filters), detail view with document preview via `/api/documents/[id]` (audited, signed ≤5 min) | T-03,T-05 | out-of-scope app is 403/404 in UI + tests; document URL opens (expires); audit row exists for every issued URL | ⬜ |
+| **T-09** | **Decisions**: decision panel (approve/reject/request info + remarks), history view w/ processing-time column, immutable action log | T-08 | decision writes via `fn_decide_application` only (invalid transitions rejected); remarks appear to student; rejecting request at faculty stage shows HOD not sawing it (chain) | ⬜ |
+| **T-10** | **Pass issuance + QR**: `fn_issue_pass` trigger on final approval, `/api/passes/[id]/qr`, `QrPassCard` + print/download (browser print stylesheet) | T-09 | approval → pass row w/ hashed token; QR renders & decodes to `/verify?token=…`; print stylesheet on mobile completes `PR` pass view; invalid pass id → clean error | ⬜ |
+| **T-11** | **Gate verification**: `/verify` page + `/api/gate/verify` + `/api/gate/record` (exit/return/rejections), duplicate-exit protection, completion on return | T-10 | scan resolves with holder name/validity only (assert **no reason/medical text** in HTML); expired/revoked/unknown tokens get correct classifications; exit→return sequence completes application; duplicate exit rejected; each attempt in `gate_verification_logs` | ⬜ |
+| **T-12** | **Admin console (core)**: departments CRUD, users (students/staff) + role change (audited, guard rails), approval-rule editor per `DATABASE.md` §3 | T-03 | admin CRUD ops mutate only via audited functions; role change of final admin blocked; rule edit reflected in fresh submissions | ⬜ |
+| **T-13** | **Admin analytics + audit**: counts, approval rate, avg processing time, overdue list; audit log viewer w/ filters | T-12 | metrics reconcile to fixture DB numbers; overdue includes only past-window undecided items; audit filter by actor/action range works | ⬜ |
+| **T-14** | **UX polish pass**: loading/empty/error states per `DESIGN_SYSTEM.md`, responsive collapse (<768) for all tables, keyboard/focus pass, mobile gate pass + verify screens, reduced-motion | T-07–T-11 | screen-by-screen checklist (mobile 360px / tablet / desktop) verified in browser; empty and error states reachable in real flows | ⬜ |
+| **T-15** | **Tests + docs finalization**: authorization matrix tests (all 5 roles × table access), workflow transition tests, upload validation tests, QR/verify tests; README verification, `.env.example` sanity, this doc + `KNOWN_ISSUES.md` cleaned | T-01–T-14 (or each one lands its slice) | `npm run test` covers matrix + red for unauthorized actions (proof of denial), green for authorized; CI-equivalent local command script reported in handoff; docs updated | ⬜ |
+
+## Explicitly deferred (with reasons)
+
+- Email delivery integration — waits on provider choice (KI-003); in-app notifications (T-07) are
+  sufficient for MVP.
+- In-app camera-based QR **scanning** by staff — URL-based verification suffices for phones
+  (D-005); revisit only by decision.
+- `CHANGELOG.md` — created with the first verified release after T-15, not before.
+
+## Doing / Done conventions
+
+- Move IDs between the table and this section only with real evidence (build/test output, demo).
+- Every change must update the affected task's acceptance criteria *before* coding if scope mutates
+  — no retroactive status edits.
