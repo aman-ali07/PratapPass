@@ -1,7 +1,7 @@
 # DATABASE — PratapPass
 
-Status: **migrations 0001–0009 applied** (T-02 auth slice + T-02a hotfix → T-05 seed → T-06
-storage/cap → T-08 staff/student profile read);
+Status: **migrations 0001–0010 applied** (T-02 auth slice + T-02a hotfix → T-05 seed → T-06
+storage/cap → T-08 staff/student profile read → T-10 guarded QR token re-derivation);
 demo seed lives OUTSIDE migrations in `supabase/seed.sql` (this document is the normative source).
 
 Conventions: UUID PKs (`gen_random_uuid()`), `created_at`/`updated_at` `timestamptz` not null
@@ -123,14 +123,16 @@ Editable by admin UI only; read only by admins (RLS) — workflow functions read
 | `fn_submit_application(reason, departure, expected_return, explanation, docs jsonb, application_id? = null)` | student | role = student, future departure window, rules lookup (department rule → global), `requires_medical_document` ⇒ ≥1 doc row, chain built (emergency ⇒ single `hod` step); audit + notifications; doc metadata validated; the optional id is server-allocated by the submission action (0008) so uploads land on the FINAL path |
 | `fn_decide_application(p_application_id, p_action, p_remarks)` | approver | role = faculty/hod; actor is the *active step's* role in the step's department (or explicit assignee); lowest pending step is the ONLY reachable one; reject/request_info require remarks; transitions per §6; appends `approval_actions`; on final approve sets app `approved` (0006 trigger issues the pass); notifications |
 | `fn_provide_info(p_application_id, p_text)` | student | only while `additional_info_required`; paused step resumes `pending`; app back to `under_review`; audit + notify resumed approvers |
-| `fn_issue_pass(p_application_id)` | system (0006 trigger) | not client-executable (`permission denied`); one pass per application (UNIQUE); token = `HMAC-SHA256(qr_token_secret, pass_id)` hex (D-015 — raw never stored, re-derivable by the QR route); `pass_code` `MPGI-<6hex>` with retry; validity = trip window bounded by `pass_validity_hours`; notification + audit |
+| `fn_issue_pass(p_application_id)` | system (0006 trigger) | not client-executable (`permission denied`); one pass per application (UNIQUE); token = `HMAC-SHA256(qr_token_secret, pass_id)` hex (D-015 — raw never stored; re-derived on demand by `fn_pass_qr_token`); `pass_code` `MPGI-<6hex>` with retry; validity = trip window bounded by `pass_validity_hours`; notification + audit |
 | `fn_gate_record(p_token_or_code, p_event)` | security/admin | resolves by raw-token hash OR `MPGI-*` code (normalized); classifies
 `valid/expired/revoked/already_exited/already_returned/invalid_token/staff_rejected`; appends `gate_verification_logs` — **unknown probes return `invalid_token` without a log row** (logs require a pass reference); valid `return` completes the application; returns holder name + validity ONLY (never reason/medical text) |
+| `fn_pass_qr_token(p_pass_id)` | owning student / admin (0010, T-10) | re-derives the deterministic raw token from `private.app_secrets` in-session and returns it ONLY to the pass's owning student or an admin; `SHA-256(raw)` must equal the stored `token_hash` or it fails LOUDLY (rotation detection). `private` is not PostgREST-exposed, so this is the sole raw-token path (D-017); gate security is deliberately not a caller |
 | *notifications read-at touch (no function)* | user | plain `UPDATE (read_at)` own unread rows via the 0003 column GRANT + 0004 own-row policy — a planned `fn_mark_notifications_read` helper was deliberately dropped (T-07): a definer function would add no authority over an RLS-covered touch |
 
 Where the secret lives: `private.app_secrets (qr_token_secret)` — a non-API schema
-(`db_extra_search_path` untouched), full revokes on all client roles; `fn_issue_pass` reads it
-in-session. Production value is provisioned at go-live (KI-002 parity checklist).
+(`db_extra_search_path` untouched), full revokes on all client roles; `fn_issue_pass` and
+`fn_pass_qr_token` read it in-session (never through PostgREST). Production value is provisioned
+at go-live (KI-002 parity checklist).
 
 All notify/audit appends live inside these functions (or triggers) so ordinary roles need no
 direct INSERT on logs/notifications.
@@ -173,6 +175,7 @@ Emergency/expedited: submit function emits only a `hod` step.
 | `0007_storage_bucket.sql` | private `medical-documents` bucket (4 MiB `file_size_limit`, PDF/JPG/PNG allowlist, idempotent); **no** `storage.objects` client policies — default deny holds, service-role writes only (D-016) | ✅ applied — T-06 |
 | `0008_document_cap_and_submit_id.sql` | document cap 10 MiB → 4 MiB (`byte_size` CHECK, D-016); `fn_submit_application` gains optional server-allocated `p_application_id` so uploads land on the FINAL `{application_id}/{uuid}.{ext}` path with no staging/move (five-param overload dropped; grants re-issued on the six-param identity) | ✅ applied — T-06 |
 | `0009_profiles_staff_student_read.sql` | the profiles read slice that DATABASE.md §2 had planned but 0003/0004 never authored: faculty/hod SELECT on same-department **student** rows (queue identity context; staff profiles and cross-dept students stay invisible; security gains nothing; D-014 write scope untouched) | ✅ applied — T-08 |
+| `0010_pass_qr_token_fn.sql` | `fn_pass_qr_token(p_pass_id)` (SECURITY DEFINER, authenticated-only): re-derives the D-015 raw token in-session, owner/admin-only, digest must round-trip `token_hash` (loud rotation error). `private` stays outside PostgREST — the fn is the sole raw-token path (D-017) | ✅ applied — T-10 |
 | `supabase/seed.sql` | **synthetic** demo data only (§8) — identities incl. GoTrue-required `auth.users` shape (zero-uuid `instance_id`, provider `raw_app_meta_data`, empty token strings) + `auth.identities` rows; fixed UUIDs; every insert idempotent (`on conflict`/`where not exists`) | ✅ T-05 |
 
 Run: `supabase db reset` (local; migrations apply on `start`/`reset`) / applied to the cloud project

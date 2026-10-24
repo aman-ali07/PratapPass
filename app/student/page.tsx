@@ -202,6 +202,11 @@ export default async function StudentDashboard({
                   New application
                 </Button>
               )}
+              {profile?.role === "student" && (
+                <Button render={<Link href="/student/passes" />} variant="secondary" size="sm">
+                  My passes
+                </Button>
+              )}
               <Button render={<Link href="/student/requests" />} variant="secondary" size="sm">
                 Applications
               </Button>

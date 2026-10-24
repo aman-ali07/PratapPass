@@ -147,3 +147,19 @@
 @utility bg-hero-scrim {
   background-image: linear-gradient(to top, rgba(0, 22, 56, 0.92), rgba(0, 51, 102, 0.65));
 }
+
+/* Gate-pass printing (PRD pass view): app chrome and interactive actions never
+   reach paper — only the pass card does, so a phone owner can print at a
+   browser and the printout stays scannable. */
+@media print {
+  header,
+  footer,
+  .no-print {
+    display: none !important;
+  }
+
+  main {
+    padding: 0 !important;
+    max-width: none !important;
+  }
+}

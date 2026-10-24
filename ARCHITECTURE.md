@@ -51,7 +51,7 @@ ever served from a public URL.
 | `/student` | student | Dashboard: my requests summary cards + live status (near-real-time: 15 s server-component re-read) |
 | `/student/apply` | student | Application form (conditional medical upload) |
 | `/student/requests`, `/student/requests/[id]` | student | History; detail + timeline + remarks + info-update flow |
-| `/student/passes`, `/student/passes/[id]` | student | Approved passes; QR display + print/download |
+| `/student/passes`, `/student/passes/[id]` | student | Issued passes; QR card (no-store `/api/passes/[id]/qr`) + print stylesheet + SVG/PNG download — prints only the pass block |
 | `/student/profile` | student | Profile & account |
 | `/approver/requests` | faculty, hod | Decision queue for the actor's scope (reachable pending step only; assignment honored by RLS) |
 | `/approver/requests/[id]` | faculty, hod | Detail: application + documents preview (audited ≤5-min 307, `/api/documents/[id]`) + timeline + decision panel (rendered only when the reachable pending step matches the viewer; actions route through `fn_decide_application`) |

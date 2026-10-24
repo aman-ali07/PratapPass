@@ -137,7 +137,9 @@ the single-plane design. Gate log rows must reference a pass (unknown probes can
 stored. Determinism lets the T-10 QR route re-derive the raw token from the pass id — no token
 storage, no plaintext, revocation still rebinds via `revoked_at`. Secret lives in
 `private.app_secrets` (non-API schema, all client roles revoked) — single DB-side source of truth
-read by `fn_issue_pass`; the QR route reads it through the service-role client. Pass issuance is
+read by `fn_issue_pass`; the QR route re-derives the raw token through `fn_pass_qr_token` (0010,
+D-017) — the originally planned service-role-client read proved impossible because `private` is
+not PostgREST-exposed. Pass issuance is
 a 0006 trigger on the application's transition to `approved` (the decide function only decides).
 **Consequences** Rotation invalidates previously issued QRs but pass codes (`MPGI-*`) stay valid —
 guards can fall back to code entry. Go-live must provision the production secret (KI-002);
@@ -165,3 +167,21 @@ uniform validated boundary. Times arrive as UTC ISO converted in the browser (na
 be parsed in the server's timezone — client component mirrors `datetime-local` → hidden ISO
 input). The UI shows the file input for reason=medical only; rule-driven requirements for other
 reasons surface the DB function's message at submit (KI-013).
+
+### D-017 — Raw QR token via a guarded SECURITY DEFINER function, not a PostgREST-exposed secret · **Active** · 2026-10-24
+**Context** D-015 specified deterministic raw tokens and a QR route that re-derives them. At T-10 it
+became concrete that `supabase/config.toml` exposes only `public`/`graphql_public` — `private.app_secrets`
+is deliberately outside the API surface. The Node route therefore *cannot* read the secret, and
+exposing the schema to PostgREST would widen the secret's reachability for every API role.
+**Decision** Migration `0010` adds `fn_pass_qr_token(p_pass_id)` (SECURITY DEFINER,
+authenticated-only grant): re-derives `raw = hmac(data=secret, key=pass_id)` with the SAME
+pgcrypto argument order as `fn_issue_pass`, returns it ONLY to the pass's owning student or an
+admin, and verifies `SHA-256(raw) = token_hash` — failing loudly on secret rotation. The route
+calls it under the caller's session, so the function's owner/admin guards run as a second layer
+beneath the route's explicit scope re-check (route = boundary, DB = authority).
+**Consequences** The secret never leaves the database; the raw credential is minted only inside
+the DB, per request. Rotation invalidates outstanding QRs loudly (D-015 consequence stays valid).
+The QR route serves SVG by default and PNG via `?format=png` (raster for downloads/decoding) with
+`Cache-Control: no-store`; T-10's evidence machine-decodes the PNG (pngjs + jsqr) back to the
+exact `/verify?token=…` URL and cross-checks the fn output against an independent Node HMAC
+recomputation. `private` remains unexposed; any future secret consumer follows this pattern.

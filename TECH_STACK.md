@@ -28,7 +28,9 @@ their owning tasks (T-10/T-15) and get appended here at that point.
 | Supabase CLI (dev dep) | T-02 → **installed, pinned exact: 2.121.0** | local DB + migrations; cloud push at go-live (KI-002) |
 | Zod ^4 | T-02 → **installed, verified: 4.6.7** | shared schemas at every boundary (env, auth forms/actions) |
 | react-hook-form + `@hookform/resolvers` | T-06 (decide then) | form integration pattern |
-| `qrcode` ^1.5 | T-10 | server-side QR generation |
+| `qrcode` ^1.5 | T-10 → **installed, verified: 1.5.4** (canonical `soldair/node-qrcode`) | server-side QR generation — SVG default, PNG 512 px for downloads/decoding |
+| `@types/qrcode` ^1.5 | T-10 → **installed: 1.5.6 (dev)** | TS types for the QR renderer |
+| `pngjs` ^7 + `jsqr` ^1.4 | T-10 → **installed: 7.0.0 / 1.4.0 (dev-only)** (canonical `pngjs`; `cozmo/jsQR`) | evidence-only QR decode round-trip in `scripts/dev/pass-smoke.mjs` (PNG → pixels → decoded text); never imported by app code |
 | Vitest + Testing Library | T-15 | authorization-matrix + workflow tests |
 
 ## Deliberate exclusions

@@ -38,7 +38,7 @@ directly.
 
 | Endpoint | Method | Auth | Request | Response |
 |---|---|---|---|---|
-| `/api/passes/[id]/qr` | GET | student owner / admin | — | SVG/PNG QR encoding `{SITE}/verify?token=…` (raw token never stored server-side) |
+| `/api/passes/[id]/qr` | GET | student owner / admin | — | QR encoding `{SITE}/verify?token=…`; SVG default, `?format=png` (512 px, raster for downloads/machine checks), `?download=1` → attachment; `Cache-Control: no-store` (the QR **is** the credential); raw token re-derived by `fn_pass_qr_token` under the caller's session; unknown **and out-of-scope ids return the same 404**; anonymous → 401 envelope |
 | `/api/documents/[id]` | GET | student owner, scoped approver, admin | — | `307` to short-lived signed URL (≤5 min) **after** audit append `document.signed_url_issued`; unknown **and out-of-scope ids return the same 404** (no existence oracle); audit failure fails closed (no URL is handed out) |
 | `/api/gate/verify` | POST | none (token is the credential) | `{ token }` | classification `{ result, pass: { holder_name, department, departure_window, exit_state } }` — **no reason, no medical data, no doc links** |
 | `/api/gate/record` | POST | security | `{ token, event }` | recording result; used by in-app security UI (phone camera via `/verify?token=` is the primary flow) |

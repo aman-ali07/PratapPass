@@ -343,6 +343,9 @@ isOneToOne: false
 "fn_mark_notifications_read":
 { Args: { "p_ids": (string)[] }; Returns: number
                            },
+"fn_pass_qr_token":
+{ Args: { "p_pass_id": string }; Returns: string
+                           },
 "fn_provide_info":
 { Args: { "p_application_id": string,"p_text": string }; Returns: undefined
                            },
