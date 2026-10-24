@@ -1,9 +1,9 @@
 # DESIGN_SYSTEM — PratapPass
 
-Status: **token layer live (T-01)** — values below are *extracted from MPGI's live site kit* (CSS
-facts, not guesses) and are compiled into `app/globals.css` (`--primary: #036` shorthand,
-`--accent: #f7af2f`, brand utilities verified in served CSS). Decision D-012 in
-`docs/DECISIONS.md`.
+Status: **implemented** (tokens + components T-01, responsive/accessibility pass T-14) — values below
+are *extracted from MPGI's live site kit* (CSS facts, not guesses) and are compiled into
+`app/globals.css` (`--primary: #036` shorthand, `--accent: #f7af2f`, brand utilities verified in
+served CSS). Decision D-012 in `docs/DECISIONS.md`.
 
 ## 1. Brand tokens (from the institute's Elementor site kit)
 

@@ -10,10 +10,11 @@ online (with medical document uploads), faculty/HOD approve through a configurab
 staff verify approved passes via QR code, and administrators manage the system with analytics and
 audit trails.
 
-**Status: T-01 (scaffold/theme) and T-02/T-02a (Supabase auth on the local CLI stack) are
-implemented and verified — see `TASKS.md`.** Every feature described in the documentation is
-**planned** unless `TASKS.md` explicitly marks the implementing task as completed. Never describe
-unbuilt work as implemented.
+**Status: T-01 → T-15 are implemented and verified locally — see `TASKS.md`.** The MVP is
+feature-complete on the local Supabase CLI stack; cloud deployment awaits credentials (KI-002) and
+the public landing page is still the scaffold placeholder. Every feature described in the
+documentation is **implemented and verified** unless `TASKS.md` marks its task as planned; never
+describe unbuilt work as implemented.
 
 Full requirements live in `PRD.md`; system design in `ARCHITECTURE.md`.
 
@@ -33,6 +34,7 @@ are not auto-loaded** — you must open the relevant one before working in its a
 | UI, styling, component design | `DESIGN_SYSTEM.md` |
 | Claiming a bug exists or a question is unresolved | `KNOWN_ISSUES.md` |
 | Reversing or questioning a prior choice | `docs/DECISIONS.md` |
+| Onboarding as a human contributor | `docs/PROJECT_GUIDE.md`, `CONTRIBUTING.md` |
 
 Keep docs consistent with the code. `docs/DECISIONS.md` and `KNOWN_ISSUES.md` must never contain
 secrets.
@@ -74,6 +76,17 @@ These reflect confirmed decisions (details and rationale in `docs/DECISIONS.md`)
 - Minimal, focused diffs. No speculative abstractions (an interface/helper earns existence with 2+
   concrete call sites). No placeholder buttons — an unfinished surface must not look operable.
 - Comments explain **why** (invariants, trade-offs), never restate the code.
+
+### Behavioral guardrails (Karpathy-derived)
+
+These apply to every task:
+
+- **Think before coding** — state assumptions, surface ambiguity and trade-offs, ask when uncertain.
+- **Simplicity first** — minimum code that solves the ask; no speculative features, abstractions, or config.
+- **Surgical changes** — no drive-by refactors or reformatting; every changed line traces to the request;
+  mention unrelated dead code instead of deleting it.
+- **Goal-driven execution** — convert the ask into verifiable criteria (tests, commands) and loop until
+  they pass.
 
 ## 5. Database rules (see `DATABASE.md` before touching)
 

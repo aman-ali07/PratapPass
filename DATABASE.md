@@ -1,8 +1,8 @@
 # DATABASE — PratapPass
 
-Status: **migrations 0001–0011 applied** (T-02 auth slice + T-02a hotfix → T-05 seed → T-06
+Status: **migrations 0001–0016 applied** (T-02 auth slice + T-02a hotfix → T-05 seed → T-06
 storage/cap → T-08 staff/student profile read → T-10 guarded QR token re-derivation → T-11 public
-gate classification);
+gate classification → T-12a/b/c admin functions → T-13 analytics/audit; T-15 adds tests, no migration);
 demo seed lives OUTSIDE migrations in `supabase/seed.sql` (this document is the normative source).
 
 Conventions: UUID PKs (`gen_random_uuid()`), `created_at`/`updated_at` `timestamptz` not null
@@ -141,7 +141,7 @@ after creation — moving a rule means creating the new scope and deleting the o
 | `fn_admin_list_users(p_search?, p_role?, p_user_id?)` · `fn_admin_create_user(p_user_id, p_full_name, p_role, p_department_id, p_roll_number, p_designation)` · `fn_admin_update_user(…)` · `fn_admin_record_password_reset(p_user_id)` | admin (0013, T-12b) | Same admin/`search_path`/EXECUTE contract as 0012. Field contract shared by `private.normalize_user_fields`: name 2–80, roll `^[A-Z0-9]{3,20}$` uppercased, designation ≤80; students require roll+department, faculty/HOD require department, staff never carry a roll, students never carry a designation. `fn_admin_update_user` takes `pg_advisory_xact_lock(730421)` **before** re-checking `is_admin()`; refuses self-role changes, demoting the last admin, changing an approver who owns pending steps (assigned or unassigned matching role+department), and moving a student with in-flight applications off the role. List joins `auth.users` for email, caps at 100 rows and returns `total_count`. Audits `admin.user_created` / `admin.user_updated` / `admin.user_password_reset` — ids/enums/role transitions only, never email or a password. Passwords never enter SQL: GoTrue hashes them; the reset function only records the administrative action (D-020) |
 | `fn_admin_list_rules(p_rule_id?)` · `fn_admin_create_rule(p_department_id, p_reason, p_chain, p_requires_medical_document, p_pass_validity_hours)` · `fn_admin_update_rule(p_id, p_chain, p_requires_medical_document, p_pass_validity_hours)` · `fn_admin_delete_rule(p_id)` | admin (0015, T-12c) | Same admin/`search_path`/EXECUTE contract as 0012. Field contract shared by `private.assert_rule_fields`: chain is a 1–2 element array of **distinct** roles from `{faculty,hod}` (order preserved — steps are created in array order), document flag non-null, validity 1–720, `emergency ⇒ ["hod"]`. Create checks the department exists and maps the unique violation to "already exists — edit it instead". Update locks the row `FOR UPDATE` and validates the **stored** reason, so the immutable `(department_id, reason)` key cannot be moved by a client; it takes no reason/department argument at all. Delete refuses `department_id IS NULL` (global defaults always remain as the fallback) and reverts the department by removing the override. Audits `admin.rule_created|updated|deleted` with reason, department id, chain(s), document flag and validity — no PII |
 | `fn_admin_analytics()` · `fn_admin_analytics_breakdown()` · `fn_admin_list_audit(p_actor_id?, p_system_actor?, p_action?, p_from?, p_to?, p_limit?, p_offset?)` · `fn_admin_audit_actors()` | admin (0016, T-13) | **Read-only** — these functions write no audit rows (a dashboard/audit view is not a mutation; the log records mutations and document access). Same `is_admin() is not true` / `search_path = public` / anon-EXECUTE-revoked contract as 0012–0015. Metric definitions: pending = `submitted + under_review + additional_info_required`; approved includes `completed`; rate = approved ÷ (approved + rejected), NULL until a decision exists; processing = `decided_at − submitted_at`; overdue = pending AND `expected_return_at < now()`. The breakdown returns `reason` and `department` rows in one call (department is the submit-time snapshot). Audit: actor or system-only (NULL), `p_action` is a **literal prefix** (`%`/`_` are not wildcards), inclusive `[p_from, p_to]`, newest-first with `(created_at, id)` as the stable key, `p_limit` clamped 1–200, and `total_count` for pagination |
-| *notifications read-at touch (no function)* | user | plain `UPDATE (read_at)` own unread rows via the 0003 column GRANT + 0004 own-row policy — a planned `fn_mark_notifications_read` helper was deliberately dropped (T-07): a definer function would add no authority over an RLS-covered touch |
+| *notifications read-at touch* | user | plain `UPDATE (read_at)` own unread rows via the 0003 column GRANT + 0004 own-row policy. Migration 0005 also defines `fn_mark_notifications_read(p_ids uuid[])`, but the app does not call it: for an RLS-covered touch it adds no authority. The function is retained for compatibility with the migration history. |
 
 Where the secret lives: `private.app_secrets (qr_token_secret)` — a non-API schema
 (`db_extra_search_path` untouched), full revokes on all client roles; `fn_issue_pass` and
@@ -176,7 +176,7 @@ Emergency/expedited: submit function emits only a `hod` step.
   `under_review`, and the decide guard rejects anything other than `submitted`/`under_review`.
 
 
-## 7. Migrations plan (files to be authored)
+## 7. Migrations (applied)
 
 | Migration | Contents | Status |
 |---|---|---|

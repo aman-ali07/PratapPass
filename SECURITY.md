@@ -1,7 +1,7 @@
 # SECURITY — PratapPass
 
-Status: **requirements & design** for implementation (enforcement arrives across tasks T-02–T-15;
-enabling conditions referenced to `DATABASE.md` and `TASKS.md`).
+Status: **implemented and verified locally** (T-02 → T-15). Cloud deployment, production secrets,
+and operational abuse controls are still pending (`KNOWN_ISSUES.md` KI-002, KI-009).
 
 ## 1. Identity & sessions
 

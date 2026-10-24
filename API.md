@@ -1,7 +1,7 @@
 # API — PratapPass
 
-Status: **contract design** (implementation lands with tasks T-06–T-11; `ARCHITECTURE.md` §3 is the
-navigation context).
+Status: **implemented** (T-01 → T-15). This file remains the contract; where it and the code
+disagree, `DATABASE.md` and the implementation are authoritative.
 
 Two mutation surfaces, one rule behind both: **Zod-validated input at the boundary + Postgres
 functions as workflow authority** (see `DATABASE.md` §5). Client code never updates workflow state

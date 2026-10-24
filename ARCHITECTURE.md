@@ -1,7 +1,8 @@
 # ARCHITECTURE — PratapPass
 
-Status: **design blueprint, being implemented** — T-01 scaffold + T-02/T-02a auth live; portal
-subsystems arrive T-03+ (see `TASKS.md`).
+Status: **implemented and verified locally** (T-01 → T-15). Cloud deployment is pending (KI-002);
+the public landing page remains a scaffold placeholder. See `TASKS.md` for evidence and
+`docs/PROJECT_GUIDE.md` for the plain-language module tour.
 
 ---
 
@@ -24,7 +25,7 @@ subsystems arrive T-03+ (see `TASKS.md`).
                ▼                               ▼
 ┌───────────────────────┐        ┌─────────────────────────────┐
 │  Supabase Auth        │        │  Supabase Postgres          │
-│  email/password       │        │  10 tables + RLS policies   │
+│  email/password       │        │  11 tables + RLS policies   │
 │  JWT carries app role │        │  SECURITY DEFINER functions │
 └───────────────────────┘        │  enforce workflow states    │
                                  └──────────────┬──────────────┘
@@ -42,7 +43,10 @@ subsystems arrive T-03+ (see `TASKS.md`).
 Postgres functions; the service-role key stays in a `server-only` module. No medical document is
 ever served from a public URL.
 
-## 2. Route map (planned)
+## 2. Route map (implemented)
+
+All routes below are live. `/student/profile` appeared in an earlier draft but was never built;
+profile self-service is limited to name and phone.
 
 | Route | Access | Purpose |
 |---|---|---|
@@ -52,7 +56,6 @@ ever served from a public URL.
 | `/student/apply` | student | Application form (conditional medical upload) |
 | `/student/requests`, `/student/requests/[id]` | student | History; detail + timeline + remarks + info-update flow |
 | `/student/passes`, `/student/passes/[id]` | student | Issued passes; QR card (no-store `/api/passes/[id]/qr`) + print stylesheet + SVG/PNG download — prints only the pass block |
-| `/student/profile` | student | Profile & account |
 | `/approver/requests` | faculty, hod | Decision queue for the actor's scope (reachable pending step only; assignment honored by RLS) |
 | `/approver/requests/[id]` | faculty, hod | Detail: application + documents preview (audited ≤5-min 307, `/api/documents/[id]`) + timeline + decision panel (rendered only when the reachable pending step matches the viewer; actions route through `fn_decide_application`) |
 | `/approver/history` | faculty, hod | The actor's OWN recorded decisions (append-only rows, actor-scoped) with processing time from submission |
@@ -113,27 +116,41 @@ student shows QR  →  camera opens GET /verify?token=...
 ```
 The verify page never renders reason/medical wording/documents.
 
-## 5. Folder structure (to be created at T-01)
+## 5. Folder structure
 
-```
+```text
 app/
-  (public)/            page.tsx, verify/
-  (auth)/              login/, register/
-  (student)/           dashboard, apply, requests/, passes/, profile
-  (approver)/          dashboard, requests/[id], history/
-  (admin)/             departments/, users/, rules/, analytics/, audit/
+  (auth)/              login, register
+  student/             dashboard, apply, requests/, passes/
+  approver/            queue, requests/[id], history/
+  admin/               departments/, users/, rules/, analytics/, audit/ + layout
+  verify/              public verification + staff recording
   api/                 documents/[id]/, passes/[id]/qr/, gate/
+  page.tsx             landing placeholder
+  layout.tsx           root shell
+  error.tsx / loading.tsx / not-found.tsx
 components/
   ui/                  shadcn primitives (generated)
-  app/                 status-badge, application-form, decision-panel, pass-qr, …
+  layout/              header, footer
+  auth/                login/register forms
+  student/             application form, status badges, QR pass, polling
+  approver/            decision panel
+  admin/               admin nav + CRUD forms
 lib/
-  supabase/            client helpers (browser / server / server-only admin)
+  supabase/            client helpers (browser / server / server-only admin) + generated types
   validation/          shared Zod schemas
-  domain/              status machine helpers, rule lookups
+  auth/                redirect sanitizer, admin gate, form state
+  admin/               labels, rule parsing, password generation
+  gate/                verify/record helpers + result vocabulary
+  documents/           magic-byte sniffing
+  application/         application form state
+  format.ts / env.ts / utils.ts / api/
 supabase/
-  migrations/          0001_init.sql … (DATABASE.md is the source of truth)
+  migrations/          0001…0016 (DATABASE.md is the source of truth)
   seed.sql             synthetic demo data
-tests/                 authorization + workflow tests (task T-15 …)
+tests/                 DB-backed suites + transactional fixtures
+scripts/               test gate + opt-in dev smoke scripts
+docs/                  decision log, project guide, screenshots
 ```
 
 ## 6. Technical constraints & notes
