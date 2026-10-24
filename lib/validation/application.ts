@@ -57,7 +57,9 @@ export const documentFileSchema = z
  * trim; ownership + state are re-checked inside the SECURITY DEFINER function).
  */
 export const infoAnswerSchema = z.object({
-  applicationId: z.uuid({ error: "Malformed application reference." }),
+  // Version-0 uuids are valid Postgres ids (seed/smoke fixtures) but fail
+  // Zod 4's uuid() version check — guid() validates the wire shape only.
+  applicationId: z.guid({ error: "Malformed application reference." }),
   text: z
     .string()
     .trim()

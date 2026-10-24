@@ -11,6 +11,14 @@ enabling conditions referenced to `DATABASE.md` and `TASKS.md`).
   client-writable** (no INSERT/UPDATE policy allows role changes outside the admin function), and
   every session-sensitive read re-derives the role server-side from `profiles` (no trust in client
   claims beyond Supabase's own `sub`).
+- **Admin console writes (T-12a).** `/admin` pages call `requireAdmin()` as a UX gate, but
+  authorization is enforced in the database: department mutations exist only as
+  `fn_admin_create_department` / `fn_admin_update_department` / `fn_admin_delete_department`
+  (SECURITY DEFINER, `is_admin() is not true` guard, EXECUTE revoked from anon/public). Every
+  mutation appends an `audit_logs` row. Deletion is refused while any profile, application,
+  approval step, or rule references the department — configuration and history are never cascaded.
+  T-12b/T-12c follow the same pattern; T-12b additionally serializes the final-admin guard with an
+  advisory transaction lock.
 - Middleware performs session refresh + **coarse identity gating** (session vs anonymous, per
   `middleware.ts`); role-granular route protection lives with the portal layouts/pages as they
   land (T-06+). A valid session for the wrong role is redirected server-side — never an error
@@ -24,7 +32,7 @@ enabling conditions referenced to `DATABASE.md` and `TASKS.md`).
 | Student | own applications/profile; own medical documents (via signed URL); own notifications |
 | Faculty / HOD | applications in their department (and assigned steps) — read, decide; documents of those applications (via signed URL) |
 | Security | only verification results computed by `fn_gate_record` from a presented token; **no browsing of passes or documents** |
-| Admin | all read for administration; workflow writes still only via functions; audit read |
+| Admin | all read for administration; workflow writes still only via functions; department writes only via the T-12a functions; audit read |
 | Everyone | no UPDATE/DELETE on `approval_actions`, `gate_verification_logs`, `audit_logs` (append-only) |
 
 Forgery resistance: approvals validate **acting role = active step's role + step order** inside the

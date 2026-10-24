@@ -36,7 +36,7 @@ the policy, write scope is the grant) · admin all · faculty/hod select same-de
 security: none (verify function returns minimal view).
 
 ### `departments`
-`name` UNIQUE · `code` UNIQUE (e.g. `CSE`) · timestamps. Read: all authed; write: admin.
+`name` UNIQUE · `code` UNIQUE (e.g. `CSE`) · timestamps. Read: all authed; write: admin only via the audited `fn_admin_*_department` functions (T-12a).
 
 ### `gate_pass_applications`
 `student_id` FK→profiles · `department_id` FK (snapshot at submit) · `reason gate_reason` ·
@@ -129,6 +129,7 @@ Editable by admin UI only; read only by admins (RLS) — workflow functions read
 `valid/expired/revoked/already_exited/already_returned/invalid_token/staff_rejected`; appends `gate_verification_logs` — **unknown probes return `invalid_token` without a log row** (logs require a pass reference); valid `return` completes the application; returns holder name + validity ONLY (never reason/medical text) |
 | `fn_gate_verify(p_token_or_code)` | anon / authenticated (0011, T-11) | **READ-ONLY** classification for `/verify` + `/api/gate/verify` — never writes logs (anonymous scans have no `gate_user_id`, D-018). Resolves the raw-token hash for anyone; the `MPGI-*` code path is security/admin-only with an explicit NULL-role guard (anonymous `NOT IN` would otherwise be NULL, i.e. pass-through). Returns `valid/expired/revoked/already_exited/already_returned/invalid_token` + holder/department/window/exit_state ONLY (never reason/medical text). Result precedence: revoked > already_returned > already_exited > expired > valid |
 | `fn_pass_qr_token(p_pass_id)` | owning student / admin (0010, T-10) | re-derives the deterministic raw token from `private.app_secrets` in-session and returns it ONLY to the pass's owning student or an admin; `SHA-256(raw)` must equal the stored `token_hash` or it fails LOUDLY (rotation detection). `private` is not PostgREST-exposed, so this is the sole raw-token path (D-017); gate security is deliberately not a caller |
+| `fn_admin_create_department(p_name, p_code)` · `fn_admin_update_department(p_id, p_name, p_code)` · `fn_admin_delete_department(p_id)` | admin (0012, T-12a) | `is_admin() is not true` fails closed (a missing profile would otherwise make `NOT NULL` pass); `search_path = public`; EXECUTE revoked from anon/public. Name 2–80, code `^[A-Z0-9-]{2,12}$` after trim/upper (shared `private.assert_department_fields`). Create/update/delete append `admin.department_*` audit rows (name/code only). Delete pre-counts profiles/applications/steps/rules and refuses while any exist — there is **no cascade**; a concurrent FK insert maps to the same refusal |
 | *notifications read-at touch (no function)* | user | plain `UPDATE (read_at)` own unread rows via the 0003 column GRANT + 0004 own-row policy — a planned `fn_mark_notifications_read` helper was deliberately dropped (T-07): a definer function would add no authority over an RLS-covered touch |
 
 Where the secret lives: `private.app_secrets (qr_token_secret)` — a non-API schema
@@ -179,6 +180,7 @@ Emergency/expedited: submit function emits only a `hod` step.
 | `0009_profiles_staff_student_read.sql` | the profiles read slice that DATABASE.md §2 had planned but 0003/0004 never authored: faculty/hod SELECT on same-department **student** rows (queue identity context; staff profiles and cross-dept students stay invisible; security gains nothing; D-014 write scope untouched) | ✅ applied — T-08 |
 | `0010_pass_qr_token_fn.sql` | `fn_pass_qr_token(p_pass_id)` (SECURITY DEFINER, authenticated-only): re-derives the D-015 raw token in-session, owner/admin-only, digest must round-trip `token_hash` (loud rotation error). `private` stays outside PostgREST — the fn is the sole raw-token path (D-017) | ✅ applied — T-10 |
 | `0011_gate_verify_fn.sql` | `fn_gate_verify(p_token_or_code)` (SECURITY DEFINER, stable, EXECUTE to anon+authenticated): read-only classification for `/verify` + `/api/gate/verify`; anonymous callers are raw-token-only (codes are security/admin-only; explicit NULL-role guard), no log writes (D-018) | ✅ applied — T-11 |
+| `0012_admin_departments.sql` | admin-only department CRUD functions (0012, T-12a): `fn_admin_create_department` / `fn_admin_update_department` / `fn_admin_delete_department`, shared `private.assert_department_fields`; audited; strict referenced-delete refusal with exact counts (no cascade) | ✅ applied — T-12a |
 | `supabase/seed.sql` | **synthetic** demo data only (§8) — identities incl. GoTrue-required `auth.users` shape (zero-uuid `instance_id`, provider `raw_app_meta_data`, empty token strings) + `auth.identities` rows; fixed UUIDs; every insert idempotent (`on conflict`/`where not exists`) | ✅ T-05 |
 
 Run: `supabase db reset` (local; migrations apply on `start`/`reset`) / applied to the cloud project

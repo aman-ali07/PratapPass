@@ -205,3 +205,32 @@ anonymous scans are intentionally unlogged because there is no identity to bind.
 is mitigated by the 256-bit token and rate limiting (KI-009), not by audit rows. The token travels
 in the URL by design (D-015), so edge/access-log retention must be limited at go-live; the page
 itself sends `no-store`, `no-referrer` and `noindex`.
+
+### D-019 — Admin console mutations are audited SECURITY DEFINER functions · **Active** · 2026-10-24
+**Context** T-12 adds the first administrative writes. `departments` has SELECT-only RLS and no
+client write policy; `profiles.role` and `approval_rules` are deliberately not client-writable. The
+console must not become a second authorization surface, and every administrative change must be
+attributable.
+**Decision** Every admin mutation is a `public` SECURITY DEFINER function with an
+`is_admin() is not true` guard (fail-closed when a caller has no profile row), `search_path = public`,
+and EXECUTE revoked from `anon`/`public` (authenticated keeps Supabase's explicit grant). The UI's
+`requireAdmin()` gate is convenience only. Functions re-validate the same field contracts as the Zod
+boundary and append `admin.*` rows to `audit_logs` — ids/enums/name/code only, never email or
+secrets. Department deletion is strict: profiles, applications, approval steps and rules are
+pre-counted and the delete is refused while any exist; no cascade is ever added. T-12b's final-admin
+guard serializes on `pg_advisory_xact_lock` because a bare admin count can race.
+**Consequences** T-12b/T-12c follow the same shape. Removing a department requires reassignment, not
+data destruction. Audit rows are append-only by the 0006 guards, so the trail cannot be edited by
+the admin who created it.
+
+### D-020 — Generated staff credentials, no user deletion · **Active** · 2026-10-24
+**Context** Email delivery is deferred (KI-003) and there is no self-service password reset. Deleting
+an auth user cascades `gate_pass_applications` (and its steps/documents/passes) and nulls
+`approval_actions.actor_id` / `audit_logs.actor_id`, destroying history.
+**Decision** T-12b provisions staff/student accounts with a server-generated 16-character password
+shown once in the action result; it is never stored, logged, or written to audit metadata. Admins
+get a reset-password action for recovery. No user deletion is exposed in T-12. Deactivation
+(`profiles.is_active` + auth ban) is deferred as the history-preserving replacement.
+**Consequences** Credentials are shared out-of-band by the admin; a lost password is recovered by an
+admin reset rather than email. Departing staff keep their history until the deactivation task lands
+(KI-015).

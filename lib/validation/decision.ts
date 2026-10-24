@@ -6,7 +6,9 @@ import { z } from "zod";
  * schema just mirrors the contract members so both sides fail identically).
  */
 export const decisionSchema = z.object({
-  applicationId: z.uuid({ error: "Malformed application reference." }),
+  // `z.guid()` rather than `z.uuid()`: Postgres accepts version-0 uuids, and
+  // the seed/smoke fixtures use them (Zod 4's uuid() enforces version bits).
+  applicationId: z.guid({ error: "Malformed application reference." }),
   action: z.enum(["approve", "reject", "request_info"] as const),
   remarks: z
     .string()

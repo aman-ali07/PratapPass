@@ -32,7 +32,10 @@ directly.
 | `decideApplicationAction(prevState, formData)` | faculty/hod | applicationId (uuid), `action` ∈ `approve \| reject \| request_info`, conditional remarks (required non-empty on reject/request_info, ≤1000) | Postgres `fn_decide_application` enforces chain order & scope (decision panel renders only when the reachable pending step matches the viewer — no dead buttons); immutable history; notifications; stale state (`not awaiting a decision…` / `no pending step`) surfaces as a re-sync banner, not a retry error |
 | `markNotificationsReadAction()` | user | — (all own unread) | RLS column-grant `UPDATE (read_at)` own unread rows only; failure surfaced via dashboard banner |
 | `recordGateEvent(tokenOrCode, { exit \| return })` | security | token/human pass code | `fn_gate_record`: classification, dedupe, completion |
-| Admin actions (T-12) | admin | departments/users/roles/rules | role changes audit-logged; admin cannot demote final admin without second admin (guard) |
+| `createDepartmentAction(prevState, formData)` | admin | name (2–80), code (2–12; normalized uppercase) | Zod boundary + `fn_admin_create_department`; audit `admin.department_created`; success state resets the form (list revalidated) |
+| `updateDepartmentAction(prevState, formData)` | admin | departmentId (uuid shape), name, code | Zod boundary + `fn_admin_update_department`; audit `admin.department_updated`; success state, list + detail revalidated |
+| `deleteDepartmentAction(prevState, formData)` | admin | departmentId (uuid shape) | `fn_admin_delete_department`; refuses with the exact profile/application/step/rule counts while referenced; audit `admin.department_deleted`; success redirects to `/admin/departments?notice=deleted` |
+| Admin actions (T-12b/T-12c) | admin | users/roles/rules | role changes audit-logged; admin cannot demote the final admin (advisory-lock guard); rule edits reflect in fresh submissions |
 
 ## 3. Route handlers (public-facing/programmatic)
 

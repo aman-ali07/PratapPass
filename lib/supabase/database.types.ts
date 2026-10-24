@@ -300,6 +300,37 @@ isOneToOne: false
             "check_roll_number_available":
 { Args: { "candidate": string }; Returns: boolean
                            },
+"fn_admin_create_department":
+{ Args: { "p_code": string,"p_name": string }; Returns: {
+              "code": string,
+"created_at": string,
+"id": string,
+"name": string,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "departments"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"fn_admin_delete_department":
+{ Args: { "p_id": string }; Returns: undefined
+                           },
+"fn_admin_update_department":
+{ Args: { "p_code": string,"p_id": string,"p_name": string }; Returns: {
+              "code": string,
+"created_at": string,
+"id": string,
+"name": string,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "departments"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "fn_decide_application":
 { Args: { "p_action": string,"p_application_id": string,"p_remarks"?: string }; Returns: {
               "application_id": string,
