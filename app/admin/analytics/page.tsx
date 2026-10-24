@@ -173,14 +173,14 @@ export default async function AdminAnalyticsPage() {
               <TableBody>
                 {byReason.map((row) => (
                   <TableRow key={row.key}>
-                    <TableCell className="font-medium">
+                    <TableCell data-label="Request type" className="font-medium">
                       {REASON_LABELS[row.key as keyof typeof REASON_LABELS] ?? row.label}
                     </TableCell>
-                    <TableCell className="text-right tabular-nums">{row.total_count}</TableCell>
-                    <TableCell className="text-right tabular-nums">{row.pending_count}</TableCell>
-                    <TableCell className="text-right tabular-nums">{row.approved_count}</TableCell>
-                    <TableCell className="text-right tabular-nums">{row.rejected_count}</TableCell>
-                    <TableCell className="text-right text-muted-foreground tabular-nums">
+                    <TableCell data-label="Total" className="text-right tabular-nums">{row.total_count}</TableCell>
+                    <TableCell data-label="Awaiting" className="text-right tabular-nums">{row.pending_count}</TableCell>
+                    <TableCell data-label="Approved" className="text-right tabular-nums">{row.approved_count}</TableCell>
+                    <TableCell data-label="Rejected" className="text-right tabular-nums">{row.rejected_count}</TableCell>
+                    <TableCell data-label="Avg processing" className="text-right text-muted-foreground tabular-nums">
                       {formatDuration(row.avg_processing_seconds)}
                     </TableCell>
                   </TableRow>
@@ -219,12 +219,12 @@ export default async function AdminAnalyticsPage() {
               <TableBody>
                 {byDepartment.map((row) => (
                   <TableRow key={row.key}>
-                    <TableCell className="font-medium">{row.label}</TableCell>
-                    <TableCell className="text-right tabular-nums">{row.total_count}</TableCell>
-                    <TableCell className="text-right tabular-nums">{row.pending_count}</TableCell>
-                    <TableCell className="text-right tabular-nums">{row.approved_count}</TableCell>
-                    <TableCell className="text-right tabular-nums">{row.rejected_count}</TableCell>
-                    <TableCell className="text-right text-muted-foreground tabular-nums">
+                    <TableCell data-label="Department" className="font-medium">{row.label}</TableCell>
+                    <TableCell data-label="Total" className="text-right tabular-nums">{row.total_count}</TableCell>
+                    <TableCell data-label="Awaiting" className="text-right tabular-nums">{row.pending_count}</TableCell>
+                    <TableCell data-label="Approved" className="text-right tabular-nums">{row.approved_count}</TableCell>
+                    <TableCell data-label="Rejected" className="text-right tabular-nums">{row.rejected_count}</TableCell>
+                    <TableCell data-label="Avg processing" className="text-right text-muted-foreground tabular-nums">
                       {formatDuration(row.avg_processing_seconds)}
                     </TableCell>
                   </TableRow>
@@ -269,18 +269,20 @@ export default async function AdminAnalyticsPage() {
               <TableBody>
                 {overdue.map((application) => (
                   <TableRow key={application.id}>
-                    <TableCell>
-                      <span className="font-medium">{application.student?.full_name ?? "—"}</span>
-                      <span className="block text-xs text-muted-foreground">
-                        {application.student?.roll_number ?? "no roll number"}
-                      </span>
+                    <TableCell data-label="Student">
+                      <div>
+                        <span className="font-medium">{application.student?.full_name ?? "—"}</span>
+                        <span className="block text-xs text-muted-foreground">
+                          {application.student?.roll_number ?? "no roll number"}
+                        </span>
+                      </div>
                     </TableCell>
-                    <TableCell>{application.department?.code ?? "—"}</TableCell>
-                    <TableCell>{REASON_LABELS[application.reason]}</TableCell>
-                    <TableCell className="text-muted-foreground">
+                    <TableCell data-label="Department">{application.department?.code ?? "—"}</TableCell>
+                    <TableCell data-label="Request type">{REASON_LABELS[application.reason]}</TableCell>
+                    <TableCell data-label="Expected return" className="text-muted-foreground">
                       {formatInstant(application.expected_return_at)}
                     </TableCell>
-                    <TableCell>
+                    <TableCell data-label="Status">
                       <StatusBadge status={application.status} />
                     </TableCell>
                   </TableRow>

@@ -136,6 +136,91 @@
   html {
     @apply font-sans;
   }
+  a:focus-visible,
+  [tabindex]:focus-visible {
+    @apply rounded-sm outline-none ring-3 ring-ring/50;
+  }
+}
+
+/* DESIGN_SYSTEM §6: motion is optional. Users who ask for less get state
+   changes without transitions, not a broken layout. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* DESIGN_SYSTEM §5: data tables collapse to cards below md. Every admin
+   TableCell carries data-label, so the header can disappear without losing
+   the column meaning. */
+@media (max-width: 767px) {
+  [data-slot="table-container"] {
+    overflow-x: visible;
+  }
+  [data-slot="table"] {
+    display: block;
+  }
+  [data-slot="table-header"] {
+    display: none;
+  }
+  [data-slot="table-body"] {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.75rem;
+  }
+  [data-slot="table-row"] {
+    display: block;
+    min-width: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--card);
+    padding: 0.75rem;
+  }
+  [data-slot="table-cell"] {
+    display: block;
+    padding: 0.3rem 0;
+    text-align: right;
+    white-space: normal;
+  }
+  [data-slot="table-cell"][data-label] {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  [data-slot="table-cell"][data-label]::before {
+    content: attr(data-label);
+    flex: 0 0 38%;
+    color: var(--muted-foreground);
+    font-weight: 500;
+    text-align: left;
+  }
+  [data-slot="table-cell"]:first-child {
+    padding-top: 0;
+  }
+  [data-slot="table-cell"]:last-child {
+    padding-bottom: 0;
+  }
+}
+
+/* DESIGN_SYSTEM §5: touch targets are at least 44px on coarse pointers. */
+@media (pointer: coarse) {
+  [data-slot="button"],
+  [data-slot="input"],
+  [data-slot="select-trigger"],
+  [data-slot="textarea"] {
+    min-height: 2.75rem;
+  }
+  [data-slot="button"][class*="size-"] {
+    min-width: 2.75rem;
+  }
 }
 
 /* Signature MPGI treatments (DESIGN_SYSTEM §1): gold shimmer gradient used

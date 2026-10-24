@@ -242,32 +242,36 @@ export default async function AdminAuditPage({
               <TableBody>
                 {entries.map((entry) => (
                   <TableRow key={entry.id}>
-                    <TableCell className="align-top whitespace-nowrap text-muted-foreground">
+                    <TableCell data-label="When" className="align-top whitespace-nowrap text-muted-foreground">
                       {formatInstant(entry.created_at)}
                     </TableCell>
-                    <TableCell className="align-top">
-                      <span className="font-medium">{entry.actor_name}</span>
-                      {entry.actor_role && (
-                        <span className="block text-xs text-muted-foreground">
-                          {entry.actor_role}
-                        </span>
-                      )}
+                    <TableCell data-label="Actor" className="align-top">
+                      <div>
+                        <span className="font-medium">{entry.actor_name}</span>
+                        {entry.actor_role && (
+                          <span className="block text-xs text-muted-foreground">
+                            {entry.actor_role}
+                          </span>
+                        )}
+                      </div>
                     </TableCell>
-                    <TableCell className="align-top">
+                    <TableCell data-label="Action" className="align-top">
                       <code className="text-xs">{entry.action}</code>
                     </TableCell>
-                    <TableCell className="align-top">
-                      <code className="text-xs">{entry.entity_type}</code>
-                      <span className="block text-xs text-muted-foreground">
-                        {entry.entity_id.slice(0, 8)}…
-                      </span>
+                    <TableCell data-label="Entity" className="align-top">
+                      <div>
+                        <code className="text-xs">{entry.entity_type}</code>
+                        <span className="block text-xs text-muted-foreground">
+                          {entry.entity_id.slice(0, 8)}…
+                        </span>
+                      </div>
                     </TableCell>
-                    <TableCell className="align-top">
-                      <details>
-                        <summary className="cursor-pointer text-xs text-muted-foreground">
+                    <TableCell data-label="Details" className="align-top">
+                      <details className="min-w-0">
+                        <summary className="inline-flex min-h-11 cursor-pointer items-center text-xs text-muted-foreground">
                           Metadata
                         </summary>
-                        <pre className="mt-1 max-h-40 max-w-xs overflow-auto rounded-md bg-muted/40 p-2 text-xs">
+                        <pre className="mt-1 max-h-40 max-w-full overflow-auto rounded-md bg-muted/40 p-2 text-xs sm:max-w-xs">
                           {JSON.stringify(entry.metadata, null, 2)}
                         </pre>
                       </details>

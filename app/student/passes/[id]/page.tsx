@@ -112,7 +112,7 @@ export default async function StudentPassDetailPage({
         }
       />
 
-      <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-10">
+      <main id="main-content" className="mx-auto w-full max-w-4xl flex-1 px-4 py-10">
         <p className="no-print text-sm text-muted-foreground">
           <Link href="/student/passes" className="underline-offset-4 hover:underline">
             My passes

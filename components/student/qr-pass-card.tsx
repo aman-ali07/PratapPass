@@ -30,7 +30,7 @@ export function QrPassCard({
         alt={`Gate pass QR${passCode ? ` ${passCode}` : ""} — scan target for gate security`}
         width={220}
         height={220}
-        className="rounded-md border border-border bg-white p-2"
+        className="h-auto max-w-full rounded-md border border-border bg-white p-2"
       />
       <figcaption className="max-w-xs text-center text-xs text-muted-foreground">
         Show this QR (or the pass code) at the campus gate. Anyone holding it

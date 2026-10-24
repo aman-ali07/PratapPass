@@ -114,16 +114,16 @@ export default async function AdminDepartmentsPage({
               <TableBody>
                 {rows.map((department) => (
                   <TableRow key={department.id}>
-                    <TableCell className="font-medium">{department.name}</TableCell>
-                    <TableCell>
+                    <TableCell data-label="Name" className="font-medium">{department.name}</TableCell>
+                    <TableCell data-label="Code">
                       <code className="rounded bg-muted px-1.5 py-0.5 text-xs">
                         {department.code}
                       </code>
                     </TableCell>
-                    <TableCell className="text-muted-foreground">
+                    <TableCell data-label="Created" className="text-muted-foreground">
                       {formatDate(department.created_at)}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell data-label="Actions" className="text-right">
                       <Button
                         render={<Link href={`/admin/departments/${department.id}`} />}
                         variant="outline"

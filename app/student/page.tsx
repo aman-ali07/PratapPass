@@ -90,7 +90,7 @@ export default async function StudentDashboard({
         }
       />
 
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10">
+      <main id="main-content" className="mx-auto w-full max-w-5xl flex-1 px-4 py-10">
         <h1 className="text-2xl font-semibold">My dashboard</h1>
         <DashboardPoll />
 

@@ -27,7 +27,7 @@ export default async function LoginPage({
     <div className="flex min-h-svh flex-col bg-secondary/40">
       <AppHeader />
 
-      <main className="mx-auto grid w-full max-w-md flex-1 place-items-center px-4 py-10">
+      <main id="main-content" className="mx-auto grid w-full max-w-md flex-1 place-items-center px-4 py-10">
         <Card className="w-full">
           <CardHeader>
             <CardTitle className="text-xl">Sign in</CardTitle>

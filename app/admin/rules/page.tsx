@@ -46,10 +46,14 @@ function RuleRows({
         return (
           <TableRow key={rule.id}>
             {showDepartment && (
-              <TableCell className="font-medium">{rule.department_code}</TableCell>
+              <TableCell data-label="Department" className="font-medium">
+                {rule.department_code}
+              </TableCell>
             )}
-            <TableCell className="font-medium">{gateReasonLabel(rule.reason)}</TableCell>
-            <TableCell>
+            <TableCell data-label="Request type" className="font-medium">
+              {gateReasonLabel(rule.reason)}
+            </TableCell>
+            <TableCell data-label="Chain">
               {chain ? (
                 ruleChainLabel(chain)
               ) : (
@@ -58,13 +62,13 @@ function RuleRows({
                 </span>
               )}
             </TableCell>
-            <TableCell>
+            <TableCell data-label="Medical document">
               {rule.requires_medical_document ? "Required" : "Not required"}
             </TableCell>
-            <TableCell className="text-muted-foreground">
+            <TableCell data-label="Pass validity" className="text-muted-foreground">
               {`${rule.pass_validity_hours} h`}
             </TableCell>
-            <TableCell className="text-right">
+            <TableCell data-label="Actions" className="text-right">
               <Button
                 render={<Link href={`/admin/rules/${rule.id}`} />}
                 variant="outline"

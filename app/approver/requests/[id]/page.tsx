@@ -112,7 +112,7 @@ export default async function ApproverDetailPage({
         }
       />
 
-      <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-10">
+      <main id="main-content" className="mx-auto w-full max-w-4xl flex-1 px-4 py-10">
         <p className="text-sm text-muted-foreground">
           <Link href="/approver/requests" className="underline-offset-4 hover:underline">
             Review queue

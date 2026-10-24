@@ -46,7 +46,7 @@ export default function Home() {
         }
       />
 
-      <main className="flex-1">
+      <main id="main-content" className="flex-1">
         <section className="bg-primary bg-hero-scrim text-primary-foreground">
           <div className="mx-auto w-full max-w-5xl px-4 py-16 sm:py-20">
             <p className="text-sm font-medium text-white/70">

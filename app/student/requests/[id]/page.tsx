@@ -97,7 +97,7 @@ export default async function ApplicationDetailPage({
         }
       />
 
-      <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-10">
+      <main id="main-content" className="mx-auto w-full max-w-4xl flex-1 px-4 py-10">
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-2xl font-semibold">
             {REASON_LABELS[application.reason]} gate pass

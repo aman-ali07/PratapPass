@@ -251,7 +251,7 @@ export default async function VerifyPage({
         }
       />
 
-      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10">
+      <main id="main-content" className="mx-auto w-full max-w-3xl flex-1 px-4 py-10">
         <h1 className="text-2xl font-semibold">Verify gate pass</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Scan the QR on a student&apos;s pass or open its verification link. This
@@ -307,7 +307,7 @@ export default async function VerifyPage({
             <CardContent>
               {isGateStaff ? (
                 <form action="/verify" method="get" className="flex flex-wrap items-end gap-3">
-                  <label className="grid gap-1 text-sm">
+                  <label className="grid w-full gap-1 text-sm sm:w-auto">
                     <span className="font-medium">Pass code or token</span>
                     <Input
                       name="token"
@@ -315,7 +315,7 @@ export default async function VerifyPage({
                       autoComplete="off"
                       spellCheck={false}
                       required
-                      className="w-64"
+                      className="w-full sm:w-64"
                     />
                   </label>
                   <Button type="submit">Verify</Button>
@@ -367,7 +367,7 @@ export default async function VerifyPage({
                   {EXIT_STATE_LABELS[passSummary.exitState]}
                 </span>
               </div>
-              <CardTitle className="text-base">{resultUi.title}</CardTitle>
+              <CardTitle className="text-xl">{resultUi.title}</CardTitle>
               <CardDescription>{resultUi.detail}</CardDescription>
             </CardHeader>
             <CardContent>
@@ -462,7 +462,7 @@ export default async function VerifyPage({
           <p className="mt-6 text-sm text-muted-foreground">
             <Link
               href="/verify"
-              className="underline underline-offset-4 hover:text-foreground"
+              className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-foreground"
             >
               Verify another pass
             </Link>

@@ -22,7 +22,7 @@ export function AdminNav() {
 
   return (
     <nav aria-label="Admin sections" className="border-b bg-muted/30">
-      <div className="mx-auto flex w-full max-w-5xl gap-1 overflow-x-auto px-4 py-2">
+      <div className="mx-auto flex w-full max-w-5xl flex-wrap gap-1 px-4 py-2 sm:flex-nowrap">
         {ITEMS.map((item) => {
           const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
           return (
@@ -31,7 +31,7 @@ export function AdminNav() {
               href={item.href}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-background hover:text-foreground",
+                "inline-flex min-h-11 items-center whitespace-nowrap rounded-md px-2 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-background hover:text-foreground sm:px-3",
                 active && "bg-background text-foreground shadow-sm ring-1 ring-foreground/10",
               )}
             >

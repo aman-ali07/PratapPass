@@ -24,7 +24,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         }
       />
       <AdminNav />
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10">{children}</main>
+      <main id="main-content" className="mx-auto w-full max-w-5xl flex-1 px-4 py-10">{children}</main>
       <AppFooter />
     </div>
   );

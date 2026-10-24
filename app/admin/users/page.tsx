@@ -192,17 +192,17 @@ export default async function AdminUsersPage({
               <TableBody>
                 {users.map((user) => (
                   <TableRow key={user.id}>
-                    <TableCell>
+                    <TableCell data-label="User">
                       <div className="font-medium">{user.full_name}</div>
                       <div className="text-xs text-muted-foreground">{user.email}</div>
                     </TableCell>
-                    <TableCell>{userRoleLabel(user.role)}</TableCell>
-                    <TableCell>{user.roll_number || "—"}</TableCell>
-                    <TableCell>{user.department_code || "—"}</TableCell>
-                    <TableCell className="text-muted-foreground">
+                    <TableCell data-label="Role">{userRoleLabel(user.role)}</TableCell>
+                    <TableCell data-label="Roll">{user.roll_number || "—"}</TableCell>
+                    <TableCell data-label="Department">{user.department_code || "—"}</TableCell>
+                    <TableCell data-label="Created" className="text-muted-foreground">
                       {formatDate(user.created_at)}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell data-label="Actions" className="text-right">
                       <Button
                         render={<Link href={`/admin/users/${user.id}`} />}
                         variant="outline"
