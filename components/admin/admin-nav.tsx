@@ -9,7 +9,10 @@ import { cn } from "@/lib/utils";
  * Admin section switcher. Only routes that actually exist are listed — an
  * unfinished surface must not look operable (AGENTS.md §4).
  */
-const ITEMS = [{ href: "/admin/departments", label: "Departments" }] as const;
+const ITEMS = [
+  { href: "/admin/departments", label: "Departments" },
+  { href: "/admin/users", label: "Users" },
+] as const;
 
 export function AdminNav() {
   const pathname = usePathname();

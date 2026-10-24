@@ -28,7 +28,7 @@ export const passwordSchema = z
 
 // Normalize (trim + lowercase) BEFORE validating — a pasted
 // "Aman.1@MpGi.ac.in " must still validate instead of failing on the space.
-const emailSchema = z
+export const emailSchema = z
   .string()
   .trim()
   .toLowerCase()

@@ -35,7 +35,10 @@ directly.
 | `createDepartmentAction(prevState, formData)` | admin | name (2–80), code (2–12; normalized uppercase) | Zod boundary + `fn_admin_create_department`; audit `admin.department_created`; success state resets the form (list revalidated) |
 | `updateDepartmentAction(prevState, formData)` | admin | departmentId (uuid shape), name, code | Zod boundary + `fn_admin_update_department`; audit `admin.department_updated`; success state, list + detail revalidated |
 | `deleteDepartmentAction(prevState, formData)` | admin | departmentId (uuid shape) | `fn_admin_delete_department`; refuses with the exact profile/application/step/rule counts while referenced; audit `admin.department_deleted`; success redirects to `/admin/departments?notice=deleted` |
-| Admin actions (T-12b/T-12c) | admin | users/roles/rules | role changes audit-logged; admin cannot demote the final admin (advisory-lock guard); rule edits reflect in fresh submissions |
+| `createUserAction(prevState, formData)` | admin | fullName (2–80), email, role, departmentId, rollNumber (students), designation (staff) | Zod boundary + service-role `auth.admin.createUser` (16-char generated password, `email_confirm`) then `fn_admin_create_user` under the admin session; a failed profile step rolls the fresh account back; success returns the one-time password once (never stored/logged/audited); audit `admin.user_created` |
+| `updateUserAction(prevState, formData)` | admin | userId (uuid shape), fullName, role, departmentId, rollNumber, designation | Zod boundary + `fn_admin_update_user`: advisory-lock + admin re-check, self-role and final-admin refusals, approver pending-step and student in-flight guards; audit `admin.user_updated` (previous/new role + department only) |
+| `resetUserPasswordAction(prevState, formData)` | admin | userId (uuid shape) | admin pre-check, target lookup via `fn_admin_list_users`, GoTrue `updateUserById`, then `fn_admin_record_password_reset`; returns the new one-time password once. If only the audit write fails, the password is still returned with an explicit warning (never silently lock the user out) |
+| Admin actions (T-12c) | admin | approval rules | rule edits reflect in fresh submissions; emergency chain stays `["hod"]` |
 
 ## 3. Route handlers (public-facing/programmatic)
 

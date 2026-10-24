@@ -33,7 +33,9 @@ RLS (0001/0002/0009): self select; self **update scoped by column GRANTs to
 `full_name`/`phone`** (Postgres has no column lists in `CREATE POLICY` — row scope is
 the policy, write scope is the grant) · admin all · faculty/hod select same-department
 **student rows** (queue context — planned in early drafts, landed as 0009 with T-08) ·
-security: none (verify function returns minimal view).
+security: none (verify function returns minimal view). **Role/department/roll/designation writes are
+admin-only via the audited `fn_admin_create_user` / `fn_admin_update_user` functions (T-12b)** — the
+table itself stays non-writable by clients (0002 column grants).
 
 ### `departments`
 `name` UNIQUE · `code` UNIQUE (e.g. `CSE`) · timestamps. Read: all authed; write: admin only via the audited `fn_admin_*_department` functions (T-12a).
@@ -91,7 +93,8 @@ RLS: select own; update limited to `read_at` (own rows — implemented as column
 in 0003 + own-row policy in 0004); insert via workflow functions (triggers) only — no client inserts.
 
 ### `audit_logs` — **append-only**
-`actor_id` FK NULL (NULL = system trigger) · `action` text (`application.submitted`,
+`actor_id` FK NULL (NULL = system trigger; **`ON DELETE RESTRICT`** since 0014 — a profile with audit
+history can never be deleted) · `action` text (`application.submitted`,
 `document.signed_url_issued`, `application.decided`, `pass.issued`, `gate.exit`, `gate.return`,
 `admin.user_created`, `auth.role_changed`, …) · `entity_type` text, `entity_id` uuid ·
 `metadata` jsonb (ids/timestamps only — no secrets, no file contents, no bulk PII) · `created_at`.
@@ -130,6 +133,7 @@ Editable by admin UI only; read only by admins (RLS) — workflow functions read
 | `fn_gate_verify(p_token_or_code)` | anon / authenticated (0011, T-11) | **READ-ONLY** classification for `/verify` + `/api/gate/verify` — never writes logs (anonymous scans have no `gate_user_id`, D-018). Resolves the raw-token hash for anyone; the `MPGI-*` code path is security/admin-only with an explicit NULL-role guard (anonymous `NOT IN` would otherwise be NULL, i.e. pass-through). Returns `valid/expired/revoked/already_exited/already_returned/invalid_token` + holder/department/window/exit_state ONLY (never reason/medical text). Result precedence: revoked > already_returned > already_exited > expired > valid |
 | `fn_pass_qr_token(p_pass_id)` | owning student / admin (0010, T-10) | re-derives the deterministic raw token from `private.app_secrets` in-session and returns it ONLY to the pass's owning student or an admin; `SHA-256(raw)` must equal the stored `token_hash` or it fails LOUDLY (rotation detection). `private` is not PostgREST-exposed, so this is the sole raw-token path (D-017); gate security is deliberately not a caller |
 | `fn_admin_create_department(p_name, p_code)` · `fn_admin_update_department(p_id, p_name, p_code)` · `fn_admin_delete_department(p_id)` | admin (0012, T-12a) | `is_admin() is not true` fails closed (a missing profile would otherwise make `NOT NULL` pass); `search_path = public`; EXECUTE revoked from anon/public. Name 2–80, code `^[A-Z0-9-]{2,12}$` after trim/upper (shared `private.assert_department_fields`). Create/update/delete append `admin.department_*` audit rows (name/code only). Delete pre-counts profiles/applications/steps/rules and refuses while any exist — there is **no cascade**; a concurrent FK insert maps to the same refusal |
+| `fn_admin_list_users(p_search?, p_role?, p_user_id?)` · `fn_admin_create_user(p_user_id, p_full_name, p_role, p_department_id, p_roll_number, p_designation)` · `fn_admin_update_user(…)` · `fn_admin_record_password_reset(p_user_id)` | admin (0013, T-12b) | Same admin/`search_path`/EXECUTE contract as 0012. Field contract shared by `private.normalize_user_fields`: name 2–80, roll `^[A-Z0-9]{3,20}$` uppercased, designation ≤80; students require roll+department, faculty/HOD require department, staff never carry a roll, students never carry a designation. `fn_admin_update_user` takes `pg_advisory_xact_lock(730421)` **before** re-checking `is_admin()`; refuses self-role changes, demoting the last admin, changing an approver who owns pending steps (assigned or unassigned matching role+department), and moving a student with in-flight applications off the role. List joins `auth.users` for email, caps at 100 rows and returns `total_count`. Audits `admin.user_created` / `admin.user_updated` / `admin.user_password_reset` — ids/enums/role transitions only, never email or a password. Passwords never enter SQL: GoTrue hashes them; the reset function only records the administrative action (D-020) |
 | *notifications read-at touch (no function)* | user | plain `UPDATE (read_at)` own unread rows via the 0003 column GRANT + 0004 own-row policy — a planned `fn_mark_notifications_read` helper was deliberately dropped (T-07): a definer function would add no authority over an RLS-covered touch |
 
 Where the secret lives: `private.app_secrets (qr_token_secret)` — a non-API schema
@@ -181,6 +185,8 @@ Emergency/expedited: submit function emits only a `hod` step.
 | `0010_pass_qr_token_fn.sql` | `fn_pass_qr_token(p_pass_id)` (SECURITY DEFINER, authenticated-only): re-derives the D-015 raw token in-session, owner/admin-only, digest must round-trip `token_hash` (loud rotation error). `private` stays outside PostgREST — the fn is the sole raw-token path (D-017) | ✅ applied — T-10 |
 | `0011_gate_verify_fn.sql` | `fn_gate_verify(p_token_or_code)` (SECURITY DEFINER, stable, EXECUTE to anon+authenticated): read-only classification for `/verify` + `/api/gate/verify`; anonymous callers are raw-token-only (codes are security/admin-only; explicit NULL-role guard), no log writes (D-018) | ✅ applied — T-11 |
 | `0012_admin_departments.sql` | admin-only department CRUD functions (0012, T-12a): `fn_admin_create_department` / `fn_admin_update_department` / `fn_admin_delete_department`, shared `private.assert_department_fields`; audited; strict referenced-delete refusal with exact counts (no cascade) | ✅ applied — T-12a |
+| `0013_admin_users.sql` | admin user directory + provisioning/role functions (T-12b): `fn_admin_list_users`, `fn_admin_create_user`, `fn_admin_update_user`, `fn_admin_record_password_reset`, shared `private.normalize_user_fields`; advisory-lock final-admin guard; self-role, pending-approver and in-flight-student guards; audited (ids/enums only) | ✅ applied — T-12b |
+| `0014_audit_actor_restrict.sql` | `audit_logs.actor_id` FK `ON DELETE SET NULL` → **`ON DELETE RESTRICT`**: the 0006 append-only guard is statement-level, so the RI nulling update fired even with zero matching rows and blocked every profile delete. RESTRICT makes the invariant explicit — history-bearing users are undeletable, fresh provisioning rollbacks work | ✅ applied — T-12b |
 | `supabase/seed.sql` | **synthetic** demo data only (§8) — identities incl. GoTrue-required `auth.users` shape (zero-uuid `instance_id`, provider `raw_app_meta_data`, empty token strings) + `auth.identities` rows; fixed UUIDs; every insert idempotent (`on conflict`/`where not exists`) | ✅ T-05 |
 
 Run: `supabase db reset` (local; migrations apply on `start`/`reset`) / applied to the cloud project

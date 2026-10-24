@@ -234,3 +234,18 @@ get a reset-password action for recovery. No user deletion is exposed in T-12. D
 **Consequences** Credentials are shared out-of-band by the admin; a lost password is recovered by an
 admin reset rather than email. Departing staff keep their history until the deactivation task lands
 (KI-015).
+
+### D-021 — Audit-actor FK `RESTRICT`; password resets do not revoke sessions · **Active** · 2026-10-24
+**Context** T-12b's provisioning rollback deletes a just-created auth user when profile finalization
+fails. Deleting the profile fires the `ON DELETE SET NULL` RI action on `audit_logs.actor_id`; the
+0006 append-only guard is a **statement-level** trigger, so it rejected that UPDATE even when no
+audit row referenced the user — every profile delete aborted, including the rollback. Separately,
+GoTrue's admin password update changes the credential but does not revoke existing refresh tokens.
+**Decision** `0014` changes the FK to `ON DELETE RESTRICT`. A profile with audit history can never
+be deleted (the delete fails loudly at the FK); a fresh account with no history can be rolled back.
+The admin UI still exposes no deletion (D-020). Password reset updates the credential and appends
+`admin.user_password_reset`, but existing sessions remain valid; this is recorded as KI-016 rather
+than silently assumed to be a session revocation.
+**Consequences** Provisioning rollback is safe and the invariant is explicit in the schema.
+Departing-user deactivation still needs KI-015. A stolen session survives a password reset until
+its token expires, so a reset is credential recovery — not incident response — until KI-016 lands.

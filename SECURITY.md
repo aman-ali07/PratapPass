@@ -19,6 +19,15 @@ enabling conditions referenced to `DATABASE.md` and `TASKS.md`).
   approval step, or rule references the department — configuration and history are never cascaded.
   T-12b/T-12c follow the same pattern; T-12b additionally serializes the final-admin guard with an
   advisory transaction lock.
+- **User provisioning & roles (T-12b).** Staff/student accounts are created through GoTrue's
+  service-role admin API only after a server-side `is_admin()` pre-check, then finalized by
+  `fn_admin_create_user` under the admin's own session (the `auth.users` trigger always creates a
+  `student`; the RPC sets the requested role/department). Passwords are generated server-side
+  (16 chars, no ambiguous glyphs), shown **once** in the action result, and never stored, logged,
+  or written to audit metadata; admins can reset a password but cannot read one. Role changes
+  refuse self-demotion, demoting the final admin, approvers with pending steps, and students with
+  in-flight applications. There is **no user deletion** (D-020, KI-015): approval/audit history
+  references the account, and the `audit_logs.actor_id` FK is `ON DELETE RESTRICT` (0014).
 - Middleware performs session refresh + **coarse identity gating** (session vs anonymous, per
   `middleware.ts`); role-granular route protection lives with the portal layouts/pages as they
   land (T-06+). A valid session for the wrong role is redirected server-side — never an error
@@ -32,7 +41,7 @@ enabling conditions referenced to `DATABASE.md` and `TASKS.md`).
 | Student | own applications/profile; own medical documents (via signed URL); own notifications |
 | Faculty / HOD | applications in their department (and assigned steps) — read, decide; documents of those applications (via signed URL) |
 | Security | only verification results computed by `fn_gate_record` from a presented token; **no browsing of passes or documents** |
-| Admin | all read for administration; workflow writes still only via functions; department writes only via the T-12a functions; audit read |
+| Admin | all read for administration; workflow writes still only via functions; department writes only via the T-12a functions; user/role writes only via the T-12b functions; audit read |
 | Everyone | no UPDATE/DELETE on `approval_actions`, `gate_verification_logs`, `audit_logs` (append-only) |
 
 Forgery resistance: approvals validate **acting role = active step's role + step order** inside the
@@ -76,6 +85,7 @@ SECURITY DEFINER function — even a compromised client cannot pre-approve or sk
 | QR replay / screenshot sharing | hashed token + expiry + revocation + single-use exit (`§4`) |
 | MIME spoofing | magic-byte validation server-side + stored content-type recheck on read |
 | Privilege escalation at signup | role forced `student`, staff provisioning admin-only |
+| Generated credential exposure | 16-char server-generated password shown once in the admin's action result; never stored, logged, or audited; admin reset for loss (D-020) |
 | Service-role key leak | `server-only` module import; no `NEXT_PUBLIC_` exposure; Vercel env only |
 | XSS via remarks/labels | React escaping (no `dangerouslySetInnerHTML`); Zod max-length caps |
 | Notification/log tampering | insert-only via functions/triggers; client has no INSERT policy |

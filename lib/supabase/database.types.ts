@@ -314,8 +314,34 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"fn_admin_create_user":
+{ Args: { "p_department_id": string | null,"p_designation": string | null,"p_full_name": string,"p_role": Database["public"]['Enums']["user_role"],"p_roll_number": string | null,"p_user_id": string }; Returns: {
+              "created_at": string,
+"department_id": string | null,
+"designation": string | null,
+"full_name": string,
+"id": string,
+"phone": string | null,
+"role": Database["public"]['Enums']["user_role"],
+"roll_number": string | null,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "profiles"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "fn_admin_delete_department":
 { Args: { "p_id": string }; Returns: undefined
+                           },
+"fn_admin_list_users":
+{ Args: { "p_role"?: Database["public"]['Enums']["user_role"],"p_search"?: string,"p_user_id"?: string }; Returns: {
+              "created_at": string,"department_code": string | null,"department_id": string | null,"department_name": string | null,"designation": string | null,"email": string,"full_name": string,"id": string,"role": Database["public"]['Enums']["user_role"],"roll_number": string | null,"total_count": number,"updated_at": string
+            }[]
+                           },
+"fn_admin_record_password_reset":
+{ Args: { "p_user_id": string }; Returns: undefined
                            },
 "fn_admin_update_department":
 { Args: { "p_code": string,"p_id": string,"p_name": string }; Returns: {
@@ -328,6 +354,24 @@ isOneToOne: false
                           SetofOptions: {
         from: "*"
         to: "departments"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"fn_admin_update_user":
+{ Args: { "p_department_id": string | null,"p_designation": string | null,"p_full_name": string,"p_role": Database["public"]['Enums']["user_role"],"p_roll_number": string | null,"p_user_id": string }; Returns: {
+              "created_at": string,
+"department_id": string | null,
+"designation": string | null,
+"full_name": string,
+"id": string,
+"phone": string | null,
+"role": Database["public"]['Enums']["user_role"],
+"roll_number": string | null,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "profiles"
         isOneToOne: true
         isSetofReturn: false
       } },
