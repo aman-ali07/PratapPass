@@ -122,3 +122,54 @@ export const userSearchSchema = z.object({
   q: z.string().trim().max(100, { error: "Search is limited to 100 characters." }).catch(""),
   role: z.union([userRoleSchema, z.literal("")]).catch(""),
 });
+
+// Approval rules (T-12c) -------------------------------------------------------
+
+export const gateReasonSchema = z.enum(["medical", "personal", "emergency", "other"]);
+export type GateReason = z.infer<typeof gateReasonSchema>;
+
+/**
+ * The four supported chains. Order matters: `fn_submit_application` creates
+ * steps in array order, so "hod,faculty" is a real (if unusual) configuration.
+ * The database re-validates the same shape (0015).
+ */
+export const RULE_CHAIN_VALUES = ["faculty", "faculty,hod", "hod", "hod,faculty"] as const;
+export type RuleChainValue = (typeof RULE_CHAIN_VALUES)[number];
+export const ruleChainSchema = z.enum(RULE_CHAIN_VALUES);
+
+export const ruleIdSchema = z.guid({ error: "Malformed rule reference." });
+
+const ruleFields = {
+  reason: gateReasonSchema,
+  chain: ruleChainSchema,
+  requiresMedicalDocument: z.string().transform((value) => value === "on"),
+  passValidityHours: z.coerce
+    .number()
+    .int({ error: "Enter a whole number of hours." })
+    .min(1, { error: "Pass validity must be at least 1 hour." })
+    .max(720, { error: "Pass validity cannot exceed 720 hours." }),
+};
+
+function checkEmergencyChain(
+  data: { reason: GateReason; chain: RuleChainValue },
+  ctx: z.RefinementCtx,
+): void {
+  if (data.reason === "emergency" && data.chain !== "hod") {
+    ctx.addIssue({
+      code: "custom",
+      path: ["chain"],
+      message: "Emergency requests always route directly to the HOD.",
+    });
+  }
+}
+
+export const createRuleSchema = z
+  .object({ ...ruleFields, departmentId: departmentIdSchema })
+  .superRefine(checkEmergencyChain);
+
+export const updateRuleSchema = z
+  .object({ ...ruleFields, ruleId: ruleIdSchema })
+  .superRefine(checkEmergencyChain);
+
+export type CreateRuleInput = z.infer<typeof createRuleSchema>;
+export type UpdateRuleInput = z.infer<typeof updateRuleSchema>;

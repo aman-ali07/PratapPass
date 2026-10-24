@@ -314,6 +314,23 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"fn_admin_create_rule":
+{ Args: { "p_chain": Json,"p_department_id": string | null,"p_pass_validity_hours": number,"p_reason": Database["public"]['Enums']["gate_reason"],"p_requires_medical_document": boolean }; Returns: {
+              "chain": NonNullable<Json>,
+"created_at": string,
+"department_id": string | null,
+"id": string,
+"pass_validity_hours": number,
+"reason": Database["public"]['Enums']["gate_reason"],
+"requires_medical_document": boolean,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "approval_rules"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "fn_admin_create_user":
 { Args: { "p_department_id": string | null,"p_designation": string | null,"p_full_name": string,"p_role": Database["public"]['Enums']["user_role"],"p_roll_number": string | null,"p_user_id": string }; Returns: {
               "created_at": string,
@@ -335,6 +352,14 @@ isOneToOne: false
 "fn_admin_delete_department":
 { Args: { "p_id": string }; Returns: undefined
                            },
+"fn_admin_delete_rule":
+{ Args: { "p_id": string }; Returns: undefined
+                           },
+"fn_admin_list_rules":
+{ Args: { "p_rule_id"?: string }; Returns: {
+              "chain": Json,"created_at": string,"department_code": string | null,"department_id": string | null,"department_name": string | null,"id": string,"pass_validity_hours": number,"reason": Database["public"]['Enums']["gate_reason"],"requires_medical_document": boolean,"updated_at": string
+            }[]
+                           },
 "fn_admin_list_users":
 { Args: { "p_role"?: Database["public"]['Enums']["user_role"],"p_search"?: string,"p_user_id"?: string }; Returns: {
               "created_at": string,"department_code": string | null,"department_id": string | null,"department_name": string | null,"designation": string | null,"email": string,"full_name": string,"id": string,"role": Database["public"]['Enums']["user_role"],"roll_number": string | null,"total_count": number,"updated_at": string
@@ -354,6 +379,23 @@ isOneToOne: false
                           SetofOptions: {
         from: "*"
         to: "departments"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"fn_admin_update_rule":
+{ Args: { "p_chain": Json,"p_id": string,"p_pass_validity_hours": number,"p_requires_medical_document": boolean }; Returns: {
+              "chain": NonNullable<Json>,
+"created_at": string,
+"department_id": string | null,
+"id": string,
+"pass_validity_hours": number,
+"reason": Database["public"]['Enums']["gate_reason"],
+"requires_medical_document": boolean,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "approval_rules"
         isOneToOne: true
         isSetofReturn: false
       } },

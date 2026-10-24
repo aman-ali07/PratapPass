@@ -249,3 +249,26 @@ than silently assumed to be a session revocation.
 **Consequences** Provisioning rollback is safe and the invariant is explicit in the schema.
 Departing-user deactivation still needs KI-015. A stolen session survives a password reset until
 its token expires, so a reset is credential recovery — not incident response — until KI-016 lands.
+
+### D-022 — Approval-rule semantics: immutable key, undeletable globals, presets · **Active** · 2026-10-24
+**Context** T-12c exposes `approval_rules` (D-008) to admins. The table keys rules by
+`(department_id NULLS NOT DISTINCT, reason)` and pins `emergency ⇒ ["hod"]` with a CHECK. Two
+questions had no prior answer: what happens when an admin "moves" a rule, and what stops the rule
+set from ending up with no fallback.
+**Decision** (1) The `(department_id, reason)` key is **immutable after creation**:
+`fn_admin_update_rule` takes no reason/department argument and validates the **stored** reason, so a
+client cannot move a rule between scopes — moving means create the new scope and delete the old
+override. (2) Global defaults (`department_id IS NULL`) are editable but **never deletable**;
+deleting a department override reverts that department to the global rule. This guarantees every
+`fn_submit_application` / `fn_issue_pass` call resolves a rule. (3) The chain is 1–2 **distinct**
+roles from `{faculty,hod}` with order preserved (steps are created in array order), and the UI offers
+exactly four presets: `Faculty → HOD`, `Faculty only`, `HOD only`, `HOD → Faculty`. Emergency is
+fixed to `["hod"]` in both the table CHECK and the function. (4) No advisory lock: the unique
+constraint plus `SELECT … FOR UPDATE` on update/delete cover the concurrent cases; unlike the
+final-admin guard (0013) there is no cross-row invariant to serialize.
+**Consequences** Rule edits are safe to reason about: they only shape **future** submissions, because
+`fn_submit_application` materializes `approval_steps` at submit time and in-flight applications keep
+theirs. The `0015` migration also backfills the missing global `other` default (the T-05 seed had
+only medical/personal/emergency), fixing a real submit failure. Known gap: the student apply form is
+still reason-driven rather than rule-driven, so a non-default `requires_medical_document` surfaces
+only as the database's submit-time message (KI-013).

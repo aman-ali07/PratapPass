@@ -61,7 +61,8 @@ ever served from a public URL.
 | `/admin/departments/[id]` | admin | Edit + guarded delete; refused while referenced (T-12a) |
 | `/admin/users` | admin | User list + create; server-side search, role filters, generated one-time password (T-12b) |
 | `/admin/users/[id]` | admin | Edit role/department/roll/designation + reset password; no delete surface (T-12b) |
-| `/admin/rules` | admin | Approval & document rule matrix (T-12c, planned) |
+| `/admin/rules` | admin | Approval & document rule matrix — global defaults + per-department overrides, override create (T-12c) |
+| `/admin/rules/[id]` | admin | Edit chain/document/validity with the key read-only; delete card for overrides only (T-12c) |
 | `/admin/analytics`, `/admin/audit` | admin | Metrics; audit log viewer (T-13, planned) |
 | `/verify` | Public (recording: security/admin) | **Gate verification page** (token URL from QR) — holder/code/department/window/exit-state only, never reason/medical data; read-only `fn_gate_verify`; security/admin get code entry + exit/return/rejection recording via `fn_gate_record` |
 

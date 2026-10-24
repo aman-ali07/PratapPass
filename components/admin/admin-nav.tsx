@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 const ITEMS = [
   { href: "/admin/departments", label: "Departments" },
   { href: "/admin/users", label: "Users" },
+  { href: "/admin/rules", label: "Rules" },
 ] as const;
 
 export function AdminNav() {
