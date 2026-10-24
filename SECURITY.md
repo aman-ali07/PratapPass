@@ -36,6 +36,15 @@ enabling conditions referenced to `DATABASE.md` and `TASKS.md`).
   reverts that department to the global default. Rule edits affect **future** submissions only —
   in-flight applications keep the steps they were created with, so changing a rule can never skip or
   reorder an approval already underway.
+- **Analytics & audit (T-13).** Both surfaces are admin-only and read through the 0016
+  `SECURITY DEFINER` RPCs. `audit_logs` stays unreadable to every other role under RLS, and the RPCs
+  re-check `is_admin()` even though EXECUTE is revoked from `anon`/`public`. These reads are
+  **not audited**: the log records mutations and document access, and a dashboard or audit view is
+  not itself an event — auditing reads would make "who read the log" recursive and would let any
+  admin inflate the append-only log. Analytics returns aggregates plus the overdue identity fields
+  admins can already read (name, roll, department, reason, status, expected return); it never
+  returns medical content or document links. Date filters are IST calendar days (inclusive), and the
+  action filter is a literal prefix, not a pattern.
 - Middleware performs session refresh + **coarse identity gating** (session vs anonymous, per
   `middleware.ts`); role-granular route protection lives with the portal layouts/pages as they
   land (T-06+). A valid session for the wrong role is redirected server-side — never an error
@@ -49,7 +58,7 @@ enabling conditions referenced to `DATABASE.md` and `TASKS.md`).
 | Student | own applications/profile; own medical documents (via signed URL); own notifications |
 | Faculty / HOD | applications in their department (and assigned steps) — read, decide; documents of those applications (via signed URL) |
 | Security | only verification results computed by `fn_gate_record` from a presented token; **no browsing of passes or documents** |
-| Admin | all read for administration; workflow writes still only via functions; department writes only via the T-12a functions; user/role writes only via the T-12b functions; rule writes only via the T-12c functions; audit read |
+| Admin | all read for administration; workflow writes still only via functions; department writes only via the T-12a functions; user/role writes only via the T-12b functions; rule writes only via the T-12c functions; analytics/audit reads only via the 0016 RPCs |
 | Everyone | no UPDATE/DELETE on `approval_actions`, `gate_verification_logs`, `audit_logs` (append-only) |
 
 Forgery resistance: approvals validate **acting role = active step's role + step order** inside the
@@ -94,6 +103,7 @@ SECURITY DEFINER function — even a compromised client cannot pre-approve or sk
 | MIME spoofing | magic-byte validation server-side + stored content-type recheck on read |
 | Privilege escalation at signup | role forced `student`, staff provisioning admin-only |
 | Malicious rule change (skip an approver) | rules are client-unwritable; definer functions re-check `is_admin()` + chain shape; emergency pinned to HOD; in-flight applications keep their created steps |
+| Analytics/audit data exposure | admin-only definer RPCs (`is_admin()` + anon EXECUTE revoked); aggregates and identity fields only, no medical content; audit rows stay append-only and unreadable to non-admins |
 | Generated credential exposure | 16-char server-generated password shown once in the admin's action result; never stored, logged, or audited; admin reset for loss (D-020) |
 | Service-role key leak | `server-only` module import; no `NEXT_PUBLIC_` exposure; Vercel env only |
 | XSS via remarks/labels | React escaping (no `dangerouslySetInnerHTML`); Zod max-length caps |

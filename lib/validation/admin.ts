@@ -173,3 +173,35 @@ export const updateRuleSchema = z
 
 export type CreateRuleInput = z.infer<typeof createRuleSchema>;
 export type UpdateRuleInput = z.infer<typeof updateRuleSchema>;
+
+// Analytics & audit (T-13) -----------------------------------------------------
+
+/** Rows per audit page; the SQL clamps to the same 1..200 window. */
+export const AUDIT_PAGE_SIZE = 50;
+
+/**
+ * A real calendar date (rejects 2026-02-31, which Date would silently roll
+ * into March). Empty means "no bound"; a malformed value degrades to no bound
+ * rather than erroring, matching the search schemas above.
+ */
+const dateOnlySchema = z
+  .string()
+  .trim()
+  .refine(
+    (value) => {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+      const parsed = new Date(`${value}T00:00:00Z`);
+      return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+    },
+    { error: "Use a real date (YYYY-MM-DD)." },
+  );
+
+export const auditFilterSchema = z.object({
+  actor: z.union([z.literal(""), z.literal("system"), z.guid()]).catch(""),
+  action: z.string().trim().max(80, { error: "Filter at most 80 characters." }).catch(""),
+  from: z.union([dateOnlySchema, z.literal("")]).catch(""),
+  to: z.union([dateOnlySchema, z.literal("")]).catch(""),
+  page: z.coerce.number().int().min(1).max(1000).catch(1),
+});
+
+export type AuditFilter = z.infer<typeof auditFilterSchema>;

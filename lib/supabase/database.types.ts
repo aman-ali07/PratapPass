@@ -300,6 +300,21 @@ isOneToOne: false
             "check_roll_number_available":
 { Args: { "candidate": string }; Returns: boolean
                            },
+"fn_admin_analytics":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "approval_rate": number | null,"approved_count": number,"avg_processing_seconds": number | null,"overdue_count": number,"pending_count": number,"rejected_count": number,"total_count": number
+            }[]
+                           },
+"fn_admin_analytics_breakdown":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "approved_count": number,"avg_processing_seconds": number | null,"dimension": string,"key": string,"label": string,"pending_count": number,"rejected_count": number,"total_count": number
+            }[]
+                           },
+"fn_admin_audit_actors":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "actor_id": string | null,"actor_name": string,"actor_role": Database["public"]['Enums']["user_role"] | null,"entry_count": number
+            }[]
+                           },
 "fn_admin_create_department":
 { Args: { "p_code": string,"p_name": string }; Returns: {
               "code": string,
@@ -354,6 +369,11 @@ isOneToOne: false
                            },
 "fn_admin_delete_rule":
 { Args: { "p_id": string }; Returns: undefined
+                           },
+"fn_admin_list_audit":
+{ Args: { "p_action"?: string,"p_actor_id"?: string,"p_from"?: string,"p_limit"?: number,"p_offset"?: number,"p_system_actor"?: boolean,"p_to"?: string }; Returns: {
+              "action": string,"actor_id": string | null,"actor_name": string,"actor_role": Database["public"]['Enums']["user_role"] | null,"created_at": string,"entity_id": string,"entity_type": string,"id": string,"metadata": Json,"total_count": number
+            }[]
                            },
 "fn_admin_list_rules":
 { Args: { "p_rule_id"?: string }; Returns: {

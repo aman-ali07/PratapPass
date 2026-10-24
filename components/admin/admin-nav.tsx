@@ -13,6 +13,8 @@ const ITEMS = [
   { href: "/admin/departments", label: "Departments" },
   { href: "/admin/users", label: "Users" },
   { href: "/admin/rules", label: "Rules" },
+  { href: "/admin/analytics", label: "Analytics" },
+  { href: "/admin/audit", label: "Audit" },
 ] as const;
 
 export function AdminNav() {

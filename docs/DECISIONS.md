@@ -272,3 +272,27 @@ theirs. The `0015` migration also backfills the missing global `other` default (
 only medical/personal/emergency), fixing a real submit failure. Known gap: the student apply form is
 still reason-driven rather than rule-driven, so a non-default `requires_medical_document` surfaces
 only as the database's submit-time message (KI-013).
+
+### D-023 — Analytics/audit are read-only admin reads, and reads are not audited · **Active** · 2026-10-24
+**Context** T-13 needs institution-wide counts and an audit viewer. PostgREST cannot express
+`GROUP BY`, `audit_logs` is admin-only under RLS, and the log is append-only. Two questions had no
+prior answer: should these reads themselves be logged, and what exactly do the metrics mean?
+**Decision** (1) Four `SECURITY DEFINER` functions are the read path: `fn_admin_analytics`,
+`fn_admin_analytics_breakdown`, `fn_admin_list_audit`, `fn_admin_audit_actors` — same
+`is_admin() is not true` guard, `search_path = public`, anon/public EXECUTE revoked as 0012–0015.
+(2) They are **read-only and write no audit rows**: the log records mutations and document access,
+a dashboard/audit view is not an event, and auditing reads would make "who read the log" recursive
+and let an admin inflate the append-only log. (3) Metric definitions are fixed in SQL: pending =
+`submitted + under_review + additional_info_required`; approved includes `completed`; approval rate
+= approved ÷ (approved + rejected), NULL until a decision exists (never a misleading 0%);
+processing = `decided_at − submitted_at` (wall clock, so an information-request pause counts);
+overdue = still pending AND `expected_return_at < now()`. (4) Audit filtering: `p_action` is a
+**literal prefix** (`left(action, char_length(p_action)) = p_action`; `%`/`_` are not wildcards),
+the date range is inclusive and the UI converts IST calendar days to UTC instants, ordering is
+`(created_at, id)` descending, and `p_limit` clamps to 1–200.
+**Consequences** `/admin/analytics` reconciles exactly to plain SQL over `gate_pass_applications`,
+and the page states its definitions so a reader can reproduce them. The audit viewer cannot rewrite
+history, and reading it leaves no trace by design — acceptable because admin access is already
+all-read under RLS; if read-access auditing is ever required it needs a separate, tamper-evident
+store rather than `audit_logs`. Known limits: analytics is all-time (no date-range filter yet), and
+overdue rows are informational because there is no admin application-detail route.

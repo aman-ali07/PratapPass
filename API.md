@@ -65,6 +65,17 @@ Page reads go through Server Components with the anon-key server client (RLS app
 module never used for student/approver listings). Search/filter params (student, department, date
 range, reason, status) are server-side, index-backed (`DATABASE.md` §2 indexes).
 
+Aggregations PostgREST cannot express (`GROUP BY`) go through admin-only, read-only SECURITY DEFINER
+RPCs (0016, T-13) — they return metrics only and never write (a dashboard view is not an auditable
+event; the log records mutations and document access):
+
+| RPC | Returns | Notes |
+|---|---|---|
+| `fn_admin_analytics()` | one row: total / pending / approved / rejected / approval rate / avg processing seconds / overdue | `pending` = submitted + under_review + additional_info_required; `approved` includes completed; rate is NULL until a decision exists |
+| `fn_admin_analytics_breakdown()` | rows tagged `reason` or `department` with the same status buckets | one round trip for both tables; department is the submit-time snapshot |
+| `fn_admin_list_audit(p_actor_id?, p_system_actor?, p_action?, p_from?, p_to?, p_limit?, p_offset?)` | audit rows + `total_count`, newest first | `p_action` is a **literal prefix** (`%`/`_` are not wildcards); `p_system_actor` selects NULL-actor rows; limit clamped 1–200 |
+| `fn_admin_audit_actors()` | actors present in the log + entry counts (plus the system pseudo-actor) | backs the actor filter options |
+
 ## 5. Error & edge rules
 
 - Validation failures return **field-level** errors; unknown/extra fields are rejected, not ignored.
