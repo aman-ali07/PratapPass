@@ -40,3 +40,4 @@ ehthumbs.db
 
 # IDE/tool agent state
 .serena/
+.opencode/

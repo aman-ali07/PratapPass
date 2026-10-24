@@ -1,0 +1,84 @@
+name: Bug report
+description: Something is broken or behaves differently than documented.
+title: "bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Please do **not** include secrets, real student data, or
+        medical documents. If this is a security vulnerability, use GitHub's private security
+        advisory instead of a public issue.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the actual behavior.
+      placeholder: When I click "Approve", ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Include the role/account type and the route. Use synthetic accounts.
+      placeholder: |
+        1. Sign in as faculty.demo@pratappass.test
+        2. Open /approver/requests
+        3. ...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Authentication / registration
+        - Student applications
+        - Approver workflow
+        - QR pass / gate verification
+        - Admin console
+        - Database / RLS / migrations
+        - UI / accessibility / responsive
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, browser, Node version, and whether you used the local Supabase stack.
+      placeholder: "Ubuntu 24.04, Chrome 140, Node 22, local Supabase CLI"
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs or screenshots
+      description: Server output, browser console, or screenshots with synthetic data only.
+      render: shell
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and KNOWN_ISSUES.md.
+          required: true
+        - label: This report contains no secrets or real personal data.
+          required: true

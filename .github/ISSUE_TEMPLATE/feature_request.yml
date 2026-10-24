@@ -1,0 +1,74 @@
+name: Feature request
+description: Suggest a focused improvement to the workflow, UI, or developer experience.
+title: "feat: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        PratapPass is an MVP. Small, well-scoped improvements are easiest to review. For large
+        changes (new roles, schema redesigns, new infrastructure), open an issue to discuss the
+        design before writing code.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the user or contributor pain, not just the proposed implementation.
+      placeholder: As an HOD, I cannot ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What should change? Mention affected routes, tables, or functions if you know.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Existing workarounds or simpler options.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Student applications
+        - Approver workflow
+        - QR pass / gate verification
+        - Admin console
+        - Security / privacy
+        - Accessibility / responsive UI
+        - Testing / developer experience
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: size
+    attributes:
+      label: Expected size
+      options:
+        - Small (copy, label, one component)
+        - Medium (a route or one function + tests)
+        - Large (schema, roles, or cross-cutting change)
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and the roadmap in KNOWN_ISSUES.md.
+          required: true
+        - label: This request does not weaken authorization, audit logging, or document privacy.
+          required: true
