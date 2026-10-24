@@ -1,8 +1,8 @@
 # TECH_STACK — PratapPass
 
-Status: **web layer pinned at T-01; Supabase/auth layer pinned at T-02** (install timeline rows
-below carry actuals from `package.json`/lockfile). Remaining packages (QR, tests) install with
-their owning tasks (T-10/T-15) and get appended here at that point.
+Status: **web layer pinned at T-01; Supabase/auth layer pinned at T-02; test runner pinned at T-15**
+(install timeline rows below carry actuals from `package.json`/lockfile). No planned package
+installs remain; future additions still follow the rules at the bottom of this file.
 
 ## Installed (T-01, pinned)
 
@@ -27,11 +27,11 @@ their owning tasks (T-10/T-15) and get appended here at that point.
 | `server-only` | T-02 → **installed: 0.0.1** | build-time guard on the service-role module |
 | Supabase CLI (dev dep) | T-02 → **installed, pinned exact: 2.121.0** | local DB + migrations; cloud push at go-live (KI-002) |
 | Zod ^4 | T-02 → **installed, verified: 4.6.7** | shared schemas at every boundary (env, auth forms/actions) |
-| react-hook-form + `@hookform/resolvers` | T-06 (decide then) | form integration pattern |
+| react-hook-form + `@hookform/resolvers` | T-06 → **not adopted** | forms use server actions + native inputs validated by shared Zod schemas; a client form library added no value |
 | `qrcode` ^1.5 | T-10 → **installed, verified: 1.5.4** (canonical `soldair/node-qrcode`) | server-side QR generation — SVG default, PNG 512 px for downloads/decoding |
 | `@types/qrcode` ^1.5 | T-10 → **installed: 1.5.6 (dev)** | TS types for the QR renderer |
 | `pngjs` ^7 + `jsqr` ^1.4 | T-10 → **installed: 7.0.0 / 1.4.0 (dev-only)** (canonical `pngjs`; `cozmo/jsQR`) | evidence-only QR decode round-trip in `scripts/dev/pass-smoke.mjs` (PNG → pixels → decoded text); never imported by app code |
-| Vitest + Testing Library | T-15 | authorization-matrix + workflow tests |
+| Vitest | T-15 → **installed, verified: 4.1.12 (dev)** | DB-backed authorization-matrix, workflow, and QR/verify tests (`npm run test`); Testing Library is **not** installed because the suite has no component tests (D-024) |
 
 ## Deliberate exclusions
 

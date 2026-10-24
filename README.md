@@ -60,7 +60,7 @@ Requirements and detailed user stories: see `PRD.md`.
 
 ## Prerequisites
 
-- Node.js 20+ and npm
+- Node.js 20.12+ (or 22/24) and npm
 - *(now)* Local-first dev: the pinned Supabase CLI runs a full local stack — no cloud project needed until go-live (D-013)
 - *(go-live, T-15)* A Supabase cloud project (Postgres + Auth + Storage) — keys are pasted into `.env.local` and migrations are pushed with `supabase db push` (KI-002)
 
@@ -72,7 +72,7 @@ npm install
 ./node_modules/.bin/supabase start        # local Supabase stack (API/Gateway/Auth/DB) — D-013
 ./node_modules/.bin/supabase status -o env # generates NEXT_PUBLIC_* + SERVICE_ROLE values
 # place the three Supabase vars + NEXT_PUBLIC_SITE_URL=http://localhost:3000 into .env.local
-./node_modules/.bin/supabase db reset     # applies supabase/migrations/0001+0002
+./node_modules/.bin/supabase db reset     # applies all migrations + supabase/seed.sql (local only)
 npm run dev                               # http://localhost:3000
 ```
 
@@ -90,8 +90,37 @@ npm run dev                               # http://localhost:3000
 | `npm run dev` | Local dev server |
 | `npm run build` / `npm start` | Production build / serve |
 | `npm run lint` / `npm run typecheck` | ESLint / TypeScript strict checks |
-| `npm run test` | Test suite (authorization + workflow tests) — *added at T-15* |
-| `./node_modules/.bin/supabase start` / `status -o env` / `db reset` | Local DB stack (pinned CLI) — migrations apply on `start`/`reset`; `status -o env` generates `.env.local` values |
+| `npm run test` / `npm run test:watch` | DB-backed authorization, workflow, and QR/verify tests (Vitest) |
+| `./scripts/test.sh` | CI-equivalent local gate: typecheck + lint + `npm run test` |
+| `./node_modules/.bin/supabase start` / `status -o env` / `db reset` | Local DB stack (pinned CLI) — migrations + seed apply on `reset`; `status -o env` generates `.env.local` values |
+
+## Testing
+
+The suite runs against the **real local Postgres**, not mocks. It simulates PostgREST sessions
+with `set local role` + `request.jwt.claims`, and every write fixture runs inside a transaction
+that is rolled back. It therefore needs a running, seeded local stack:
+
+```bash
+./node_modules/.bin/supabase start
+./node_modules/.bin/supabase db reset   # local only; applies migrations + demo seed
+npm run test                            # or ./scripts/test.sh for typecheck + lint + tests
+```
+
+`psql` (PostgreSQL client) must be on `PATH`. The harness connects to
+`postgresql://postgres:postgres@127.0.0.1:54322/postgres`; set `SUPABASE_DB_URL` to override it
+(for example, a CI service container that has been migrated and seeded).
+
+| File | What it proves |
+|---|---|
+| `tests/validation.test.ts` | Document magic-byte sniffing, 4 MiB/MIME upload limits, application/gate/info Zod boundaries (including strict JSON bodies) |
+| `tests/rls.test.ts` | Five roles × every RLS table see exactly their scope; anonymous sees nothing; direct writes/history rewrites/role escalation and workflow-function calls are denied (with the exact Postgres error) |
+| `tests/fixtures/workflow.sql` | Submit → request-info → answer → faculty → HOD → pass issuance → gate exit/return → completed, plus denial probes for skipped steps, wrong actors, missing remarks, and terminal states |
+| `tests/fixtures/qr-verify.sql` | QR token derivation is owner/admin-only; anonymous verification accepts raw tokens but not enumerable `MPGI-*` codes; revoked/expired/exit/return classifications; payload contains no reason/medical/explanation keys |
+
+The denial probes are assertions, not comments: if an unauthorized action starts succeeding (or an
+authorized one starts failing), the fixture raises and the test fails. Component/visual behavior is
+covered by the dev smoke scripts under `scripts/dev/` (they need real browser sessions); Testing
+Library is deliberately not installed (D-024).
 
 ## Usage
 

@@ -296,3 +296,25 @@ history, and reading it leaves no trace by design — acceptable because admin a
 all-read under RLS; if read-access auditing is ever required it needs a separate, tamper-evident
 store rather than `audit_logs`. Known limits: analytics is all-time (no date-range filter yet), and
 overdue rows are informational because there is no admin application-detail route.
+
+### D-024 — Tests exercise the real Postgres authority; Vitest without component-test tooling · **Active** · 2026-10-24
+**Context** T-15 needs a repeatable authorization matrix, workflow transitions, upload validation,
+and QR/verify coverage. Until now, evidence came from ad-hoc `scripts/dev/*-smoke.mjs` runs against
+accumulated fixtures. Mocking the Supabase client would test the mock, not RLS or the
+`SECURITY DEFINER` functions that are the actual authorization authority; adding Testing Library
+would only pay off with component tests, which the acceptance criteria do not require.
+**Decision** (1) Use **Vitest 4.1.12** (`node` environment, files run sequentially) and drive the
+local Supabase Postgres through `psql`. (2) Simulate PostgREST sessions with
+`set local role authenticated|anon` + `request.jwt.claims`; the matrix covers five roles × every RLS
+table plus anonymous. (3) Every write fixture runs in one transaction and ends in `ROLLBACK`; tests
+assert scope predicates and fixed seed ids rather than absolute row counts, so accumulated demo data
+cannot make them flaky. (4) Denial probes call the real function and assert the exact Postgres
+error (`P0001` messages or `permission denied`), so an authorization regression turns the suite red.
+(5) Testing Library is **not** installed; UI/visual behavior stays with the real-session browser
+smoke scripts under `scripts/dev/`. (6) `SUPABASE_DB_URL` can point the suite at another seeded
+database; the default is the local CLI port.
+**Consequences** `npm run test` proves the same RLS/definer behavior production relies on, and
+`./scripts/test.sh` is the CI-equivalent local gate (typecheck + lint + tests). The suite requires a
+running, seeded Postgres and `psql`, so it is not a pure unit-test job. Component-level tests remain
+absent by design; the browser smoke scripts are the evidence there, and they are not part of
+`npm run test`.

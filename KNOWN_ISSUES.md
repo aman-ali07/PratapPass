@@ -13,7 +13,6 @@ handoff message. This file contains no secrets.
 | KI-003 | Decision | **Email delivery provider unchosen.** MVP ships in-app notifications only; nothing in code should hard-depend on a mailer. | Email update path for decisions after T-15 | User (provider preference) |
 | KI-004 | Design | **Gate-pass print/PDF template** needs institutional preference (layout, logo placement, signature blocks). Interim: modern HTML print stylesheet in T-10. | T-10 deliverable |
 | KI-005 | Scope | **In-app camera-based QR scanning by security staff deferred** (D-005). URL-flow verification works from any phone camera. | Re-open only via decision entry | — |
-| KI-007 | Verification | **Remaining package versions** — Supabase/auth layer pinned at T-02 (`@supabase/supabase-js` 2.118.0, `@supabase/ssr` 0.6.1, zod 4.6.7, CLI 2.121.0 pinned; web layer pinned at T-01). QR stack verified at T-10: `qrcode` 1.5.4 (canonical), `@types/qrcode` 1.5.6, dev-only `pngjs` 7.0.0 + `jsqr` 1.4.0 (decode evidence). Still pending: Vitest (T-15). | T-15 |
 | KI-008 | Policy | **Retention period for medical documents undecided** (institutional policy required; `SECURITY.md` §6 requires a purge flow once decided). Interim: no auto-deletion; admin purge tool lists and deletes by audit trail. | User (institutional retention rule) |
 | KI-009 | Ops | **Rate limiting / abuse controls** on public endpoints (`/verify`, `/api/gate/verify`, submit) intentionally out of MVP; the public verify path is token-only for anonymous callers (codes are security/admin-only, D-018), but 256-bit-token probing and form spam still need a per-IP/identity limiter at pre-production review (bot-protection at Vercel/Supabase). | Pre-production |
 | KI-010 | Environment | **Local Supabase analytics pipeline disabled** (`[analytics] enabled = false` in `supabase/config.toml`): this host's Docker logging driver is unreadable by the vector sidecar, which marked the whole stack unhealthy. Log analytics/Studio log-explorer are unused by the app. | None for app features; re-enable only on a host with a compatible logging driver | — |
@@ -26,6 +25,7 @@ handoff message. This file contains no secrets.
 
 ## Resolved
 
-| ID | Resolution (2026-10-23) |
+| ID | Resolution |
 |---|---|
 | KI-006 | Typeface decided — **Poppins** (300–700) as the sole institutional typeface via `next/font`; Rubik and the "display serif" candidate dropped. Evidence + rationale: `docs/DECISIONS.md` D-012; tokens live in `app/globals.css` and verified in served CSS (T-01). |
+| KI-007 | Package versions verified (closed at T-15, 2026-10-24): web/Supabase/QR stack already pinned at T-01/T-02/T-10; **Vitest 4.1.12** installed as the test runner (D-024). Testing Library was not installed because the suite has no component tests. `TECH_STACK.md` records the actuals. |
