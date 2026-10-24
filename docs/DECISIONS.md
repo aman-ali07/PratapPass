@@ -185,3 +185,23 @@ The QR route serves SVG by default and PNG via `?format=png` (raster for downloa
 `Cache-Control: no-store`; T-10's evidence machine-decodes the PNG (pngjs + jsqr) back to the
 exact `/verify?token=…` URL and cross-checks the fn output against an independent Node HMAC
 recomputation. `private` remains unexposed; any future secret consumer follows this pattern.
+
+### D-018 — Public verify is read-only and token-only for anonymous callers · **Active** · 2026-10-24
+**Context** T-11 makes `/verify` public because the QR is scanned at the gate, often by a guard's
+phone with no session. But `gate_verification_logs.gate_user_id` is NOT NULL, so the previous
+SECURITY.md wording "every attempt writes `gate_verification_logs`" was unachievable for anonymous
+scans. Separately, `MPGI-*` pass codes carry only 24 bits of entropy — a public endpoint that
+resolved codes would be trivially enumerable.
+**Decision** Migration `0011` adds `fn_gate_verify(p_token_or_code)` (SECURITY DEFINER, stable,
+EXECUTE to anon+authenticated): a READ-ONLY classifier that never writes logs. Anonymous callers may
+present only the 256-bit raw token; the `MPGI-*` code path is gated to security/admin, with an
+explicit NULL-role guard so an anonymous caller cannot slip through a `NOT IN` that evaluates to
+NULL. `fn_gate_record` remains the sole writer (security/admin) and appends one row per
+authenticated recording attempt; unknown probes are refused without a row because a log requires a
+pass reference. The public surface returns holder, pass code, department, validity window and exit
+state — never reason, explanation, document links or health text.
+**Consequences** "Every attempt" in SECURITY.md now means every authenticated *recording* attempt;
+anonymous scans are intentionally unlogged because there is no identity to bind. Anonymous probing
+is mitigated by the 256-bit token and rate limiting (KI-009), not by audit rows. The token travels
+in the URL by design (D-015), so edge/access-log retention must be limited at go-live; the page
+itself sends `no-store`, `no-referrer` and `noindex`.

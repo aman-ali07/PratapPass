@@ -11,6 +11,20 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "4.5mb",
     },
   },
+  // /verify URLs carry the pass credential and the response carries holder PII:
+  // keep them out of shared caches, search indexes, and cross-origin referrers.
+  async headers() {
+    return [
+      {
+        source: "/verify",
+        headers: [
+          { key: "Cache-Control", value: "no-store" },
+          { key: "Referrer-Policy", value: "no-referrer" },
+          { key: "X-Robots-Tag", value: "noindex, nofollow" },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

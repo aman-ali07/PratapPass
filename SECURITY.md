@@ -44,12 +44,20 @@ SECURITY DEFINER function — even a compromised client cannot pre-approve or sk
 
 ## 4. Gate pass tokens (replay / expiry model)
 
-- On approval, `fn_issue_pass` generates the raw token (high-entropy), stores only **SHA-256**
-  hash + `expires_at` in `gate_passes`; the QR encodes `{SITE}/verify?token=<raw>`.
-- `/verify` (and `/api/gate/verify`) classify result: `valid | expired | revoked | already_exited |
-  invalid_token | staff_rejected`; every attempt writes `gate_verification_logs`.
-- Recording `exit` prevents duplicate exits (`already_exited`); `return` completes the pass.
-- Revocation (cancel/misuse) is server-side; physical/Qin copies become invalid instantly.
+- On approval, `fn_issue_pass` derives the raw token as `HMAC-SHA256(qr_token_secret, pass_id)` and
+  stores only its **SHA-256** digest + `expires_at` in `gate_passes`; the QR encodes
+  `{SITE}/verify?token=<raw>` (D-015). The raw token is re-derived only inside the DB
+  (`fn_pass_qr_token`, D-017).
+- `/verify` and `/api/gate/verify` are **read-only** classification: `valid | expired | revoked |
+  already_exited | already_returned | invalid_token`. Anonymous callers may present the 256-bit raw
+  token only; `MPGI-*` pass codes are 24-bit and are accepted only for signed-in security/admin
+  (D-018). Read-only verification writes no log rows — `gate_verification_logs.gate_user_id` is
+  NOT NULL, so an anonymous scan has no identity to bind.
+- Every authenticated **recording** attempt (`fn_gate_record`, security/admin) appends exactly one
+  `gate_verification_logs` row; unknown probes are refused without a row because a log requires a
+  pass reference. Recording `exit` prevents duplicate exits (`already_exited`); `return` without a
+  recorded exit is `staff_rejected`; a valid `return` completes the application.
+- Revocation (cancel/misuse) is server-side; physical/printed copies become invalid instantly.
 
 ## 5. Threats & mitigations (summary)
 

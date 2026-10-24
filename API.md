@@ -40,11 +40,16 @@ directly.
 |---|---|---|---|---|
 | `/api/passes/[id]/qr` | GET | student owner / admin | — | QR encoding `{SITE}/verify?token=…`; SVG default, `?format=png` (512 px, raster for downloads/machine checks), `?download=1` → attachment; `Cache-Control: no-store` (the QR **is** the credential); raw token re-derived by `fn_pass_qr_token` under the caller's session; unknown **and out-of-scope ids return the same 404**; anonymous → 401 envelope |
 | `/api/documents/[id]` | GET | student owner, scoped approver, admin | — | `307` to short-lived signed URL (≤5 min) **after** audit append `document.signed_url_issued`; unknown **and out-of-scope ids return the same 404** (no existence oracle); audit failure fails closed (no URL is handed out) |
-| `/api/gate/verify` | POST | none (token is the credential) | `{ token }` | classification `{ result, pass: { holder_name, department, departure_window, exit_state } }` — **no reason, no medical data, no doc links** |
-| `/api/gate/record` | POST | security | `{ token, event }` | recording result; used by in-app security UI (phone camera via `/verify?token=` is the primary flow) |
+| `/api/gate/verify` | POST | none (token is the credential) | `{ token }` | read-only classification `{ result, pass: { holder_name, department, departure_window: { valid_from, expires_at }, exit_state } or null }` — **no reason, no medical data, no doc links**. Anonymous callers: raw 64-hex token only (pass codes refused — 24-bit); security/admin may also send a code. `Cache-Control: no-store` |
+| `/api/gate/record` | POST | security/admin | `{ token, event: "exit" \| "return" \| "rejection" }` | `{ result }`; appends one `gate_verification_logs` row (unknown token → `invalid_token`, no row); 401 anonymous / 403 other roles; `Cache-Control: no-store` |
 
-`/verify` itself is a **server-rendered page** (reads `?token=`, calls verify function, renders the
-verify result card) — the QR encodes the page URL, so scanning requires no native app.
+`/verify` itself is a **public server-rendered page** (reads `?token=`, calls the read-only
+`fn_gate_verify`) — the QR encodes the page URL, so scanning requires no native app. Holder, pass
+code, department, validity window and exit state render for anyone holding the token (the token is
+the credential); reason/document/health data never does. Security/admin additionally get the
+code-entry form and, once a pass resolves, exit/return/rejection recording actions (server action →
+`fn_gate_record`). The page sends `Cache-Control: no-store`, `Referrer-Policy: no-referrer` and
+`X-Robots-Tag: noindex` (`next.config.ts`).
 
 ## 4. Reads
 

@@ -59,7 +59,7 @@ ever served from a public URL.
 | `/admin` | admin | Overview + pending/all requests monitor |
 | `/admin/departments`, `/admin/users`, `/admin/rules` | admin | People, departments, approval & document rules |
 | `/admin/analytics`, `/admin/audit` | admin | Metrics; audit log viewer |
-| `/verify` | Public | **Gate verification page** (token URL from QR) — pass status only, no medical data |
+| `/verify` | Public (recording: security/admin) | **Gate verification page** (token URL from QR) — holder/code/department/window/exit-state only, never reason/medical data; read-only `fn_gate_verify`; security/admin get code entry + exit/return/rejection recording via `fn_gate_record` |
 
 Middleware protects role prefixes and redirects unauthenticated/unauthorized access to `/login`.
 
@@ -99,9 +99,10 @@ approver → /approver/requests/[id] (read via RLS: dept-scope only)
 ### Gate verification (security)
 ```
 student shows QR  →  camera opens GET /verify?token=...
-→ server: hash token, lookup gate_passes by token_hash (service-role function)
-→ result page: pass valid? holder name, dept, departure window, exit/return state
-→ POST /api/gate/record {token, event: exit|return} → gate_verification_logs
+→ server: fn_gate_verify(probe) — anonymous token-only; hash lookup + classification
+→ result page: pass valid? holder name, dept, validity window, exit/return state
+→ security/admin: POST /api/gate/record {token, event: exit|return|rejection}
+→ fn_gate_record → gate_verification_logs (one row per authenticated attempt)
 → return event completes application (status=completed) or flags rejection cases
 ```
 The verify page never renders reason/medical wording/documents.

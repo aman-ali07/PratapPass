@@ -323,6 +323,9 @@ isOneToOne: false
 "fn_gate_record":
 { Args: { "p_event": Database["public"]['Enums']["verification_event"],"p_token_or_code": string }; Returns: Json
                            },
+"fn_gate_verify":
+{ Args: { "p_token_or_code": string }; Returns: Json
+                           },
 "fn_issue_pass":
 { Args: { "p_application_id": string }; Returns: {
               "application_id": string,
